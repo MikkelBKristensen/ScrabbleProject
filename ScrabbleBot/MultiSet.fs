@@ -1,9 +1,104 @@
-﻿// Insert your MultiSet.fs file here. All modules must be internal
-
 module internal MultiSet
 
-    type MultiSet<'a> = Temp of unit // Not implemented
+    open System
 
-    let empty : MultiSet<'a> = Temp () // Not implemented
-    let add   : 'a -> uint32 -> MultiSet<'a> -> MultiSet<'a> = fun _ _ _ -> failwith "Not implemented" 
-    let fold  : ('b -> 'a -> uint32 -> 'b) -> 'b -> MultiSet<'a> -> 'b = fun _ _ _ -> failwith "Not implemented"
+    type MultiSet<'a when 'a : comparison> = R of Map<'a, uint32>
+
+    let empty = R Map.empty<'a, uint32>
+
+    let isEmpty (a : MultiSet<'a>) = 
+        match a with
+        | R map -> Map.isEmpty map
+
+    let rec size (R map) =
+        Map.fold (fun acc _ count -> acc + count) 0u map
+    
+    let contains (item: 'a) (set : MultiSet<'a>) =
+        match set with
+        | R map -> Map.containsKey item map 
+
+
+    let numItems (item : 'a) (set : MultiSet<'a>) =
+        let value =
+            match set with
+            | R map -> Map.tryFind item map
+        match value with
+        | None -> 0u
+        | Some count -> count
+
+
+    let rec add (item : 'a) (no : uint32) (set : MultiSet<'a>) : MultiSet<'a> =
+        match set with
+        | R map ->
+            match no with
+            | 0u -> R map
+            | _ ->
+                let count =
+                    match Map.tryFind item map with
+                    | Some c -> c + 1u
+                    | None -> 1u
+                add item (no-1u) (R (Map.add item count map))
+            
+
+    let addSingle (item : 'a) (set : MultiSet<'a>) : MultiSet<'a> =
+        match set with
+        | R map ->
+                let count =
+                    match Map.tryFind item map with
+                    | Some c -> c + 1u
+                    | None -> 1u
+                R (Map.add item count map)
+            
+    
+    let rec remove (item : 'a) (no : uint32) (set  : MultiSet<'a>) : MultiSet<'a> =
+        match set with
+        | R map ->
+            match no with
+            | 0u -> R map
+            | _ ->
+                let newMap =
+                    match Map.tryFind item map with
+                    | None -> R map
+                    | Some c when c < 1u -> R (Map.remove item map)
+                    | Some c ->  remove item (no-1u) (R (Map.add item (c - 1u) map))
+                newMap
+            
+
+    let removeSingle (item : 'a) (set : MultiSet<'a>) : MultiSet<'a> =
+        match set with
+        | R map ->
+            let newMap =
+                match Map.tryFind item map with
+                | None -> R map
+                | Some c when c < 1u -> R (Map.remove item map)
+                | Some c ->  R (Map.add item (c - 1u) map)
+            newMap
+
+
+    let fold (func : 'a -> 'b -> uint32 -> 'a) (acc : 'a) (set : MultiSet<'b>) : 'a =
+        match set with
+        | R map ->
+            Map.fold func acc map
+
+
+        
+        
+    let foldBack (func : 'a -> uint32 -> 'b -> 'b) (set : MultiSet<'a>) (acc : 'b) =
+        match set with
+        | R map ->
+            Map.foldBack func map acc
+    
+    let ofList (_ : 'a list) : MultiSet<'a> = empty
+    let toList (_ : MultiSet<'a>) : 'a list = []
+
+
+    let map (_ : 'a -> 'b) (_ : MultiSet<'a>) : MultiSet<'b> = empty
+
+    let union (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
+    let sum (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
+    
+    let subtract (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
+    
+    let intersection (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
+       
+    
