@@ -1,0 +1,10 @@
+﻿.idea
+
+*.obj
+.obj
+
+*.bin
+.bin
+
+.json
+*.json
