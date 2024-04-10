@@ -18,6 +18,8 @@
     <Compile Include="Parser.fs" />
     <Compile Include="Scrabble.fsi" />
     <Compile Include="Scrabble.fs" />
+    <Compile Include="Dict.fsi" />
+    <Compile Include="Dict.fs" />
   </ItemGroup>
 
   <ItemGroup>
