@@ -1,4 +1,4 @@
-﻿namespace YourClientName
+﻿namespace LetterRip
 
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
