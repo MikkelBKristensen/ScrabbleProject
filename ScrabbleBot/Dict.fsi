@@ -1,4 +1,4 @@
-module internal LetterRip.Dictionary
+module LetterRip.Dictionary
 
 
     type Dict 
