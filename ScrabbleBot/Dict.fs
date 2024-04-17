@@ -1,4 +1,5 @@
-module LetterRip.Dict
+module internal LetterRip.Dictionary
+
 
     type Dict =
         | Leaf of bool
