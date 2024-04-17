@@ -1,29 +1,40 @@
 module LetterRip.Dict
 
-    type Dict =
-        | Leaf of bool
-        | Node of bool * Map<char, Dict>
-        
-    type dMap = Map<char,Dict>
-    
-    let empty () = Leaf false
-    
-    let rec insert (s: string) (dict: Dict) =
-        let insertHelper (word: string) (node: Dict) (index: int) =
-            match index with
-            | i when i = word.Length -> Leaf true
-            | Node (_, dic) when word.Length = 0 -> Node (true, dic)
-            | Leaf b ->
-                let temp = dMap ()
-                let char = word.[0]
-                temp[c] <- insert word[1..] (empty ())
-                Node(b, temp)
-            | Node(b, dic) ->
-                let c = word[0]
-                match dic.TryFind c with
-                | (true, value) ->
-                    dic[c] <- insert word[1..] value
-                    Node(b, dic)
-                | (false, _) ->
-                    dic[c] <- insert word[1..] (empty())
-                    Node(b, dic)
+open System.Collections.Generic
+
+type Dict =
+    { IsWord: bool
+      Children: Dictionary<char, Dict> }
+
+let empty () =
+    { IsWord = false
+      Children = Dictionary<char, Dict>() }
+
+let rec insert (word: string) (dict: Dict) =
+    match word with
+    | "" -> { dict with IsWord = true }
+    | _ ->
+        let head = word.[0]
+        let tail = word.[1..]
+        let child =
+            match dict.Children.TryGetValue head with
+            | true, node -> node
+            | false, _ -> empty ()
+        let updatedChild = insert tail child
+        dict.Children.[head] <- updatedChild
+        dict
+
+let rec lookup (word: string) (dict: Dict) =
+    match word with
+    | "" -> dict.IsWord
+    | _ ->
+        let head = word.[0]
+        let tail = word.[1..]
+        match dict.Children.TryGetValue head with
+        | true, node -> lookup tail node
+        | false, _ -> false
+
+let step (c: char) (dict: Dict) =
+    match dict.Children.TryGetValue c with
+    | true, node -> Some (node.IsWord, node)
+    | false, _ -> None
