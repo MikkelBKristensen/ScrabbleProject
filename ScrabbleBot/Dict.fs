@@ -1,4 +1,4 @@
-module LetterRip.Dict
+module LetterRip.Dictionary
 
 open System.Collections.Generic
 
