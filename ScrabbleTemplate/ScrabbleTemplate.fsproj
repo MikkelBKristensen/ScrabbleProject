@@ -7,7 +7,9 @@
 
   <ItemGroup>
 
-    <Content Include="Dictionaries\English.txt" />
+    <Content Include="Dictionaries\English.txt" >
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="Program.fs" />
   </ItemGroup>
 
