@@ -1,6 +1,5 @@
 module LetterRip.Dictionary
 
-
     type Dict 
 
     val empty : unit -> Dict

@@ -81,13 +81,9 @@ module internal Parser
     let NegParse = unop (pchar '-') AtomParse |>> (fun x -> Mul (N -1, x)) <?> "Neg"
     let PVParse =  pPointValue >*>. parenthesise TermParse |>> PV <?> "PV"
     
-
-    
     do aref := choice [PVParse; NegParse; VParse; NParse; ParParse]
     
-    
     let AexpParse = TermParse 
-    
     
     let cTermParse , cref = createParserForwardedToRef<cExp>()
     

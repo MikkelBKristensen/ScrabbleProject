@@ -42,18 +42,25 @@ module State =
     // information, such as number of players, player turn, etc.
 
     type state = {
-        board         : Parser.board
-        dict          : ScrabbleUtil.Dictionary.Dict
-        playerNumber  : uint32
-        hand          : MultiSet.MultiSet<uint32>
+        board            : Parser.board
+        dict             : ScrabbleUtil.Dictionary.Dict
+        playerNumber     : uint32
+        hand             : MultiSet.MultiSet<uint32>
+        playerAmount     : uint32
+        playersTurn      : uint32
+        forfeitedPlayers : Set<uint32>
     }
 
-    let mkState b d pn h = {board = b; dict = d;  playerNumber = pn; hand = h }
+    let mkState b d pn h pa pt fp =
+        {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp}
 
     let board st         = st.board
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
+    let playerAmount st  = st.playerAmount
+    let playersTurn st   = st.playersTurn
+    let forfeitedPlayers st = st.forfeitedPlayers
 
 module Scrabble =
     open System.Threading
@@ -105,12 +112,12 @@ module Scrabble =
             (timeout : uint32 option) 
             (cstream : Stream) =
         debugPrint 
-            (sprintf "Starting game!
-                      number of players = %d
-                      player id = %d
-                      player turn = %d
-                      hand =  %A
-                      timeout = %A\n\n" numPlayers playerNumber playerTurn hand timeout)
+            $"Starting game!
+                      number of players = %d{numPlayers}
+                      player id = %d{playerNumber}
+                      player turn = %d{playerTurn}
+                      hand =  %A{hand}
+                      timeout = %A{timeout}\n\n"
 
         //let dict = dictf true // Uncomment if using a gaddag for your dictionary
         let dict = dictf false // Uncomment if using a trie for your dictionary
@@ -118,5 +125,5 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet numPlayers playerTurn Set.empty<uint32> )
         
