@@ -4,8 +4,9 @@ open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
 
 open System.IO
-
+open StateMonad
 open ScrabbleUtil.DebugPrint
+
 
 // The RegEx module is only used to parse human input. It is not used for the final product.
 
@@ -61,7 +62,12 @@ module State =
     let playerAmount st  = st.playerAmount
     let playersTurn st   = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
-
+    
+    type SM = SM<state>
+    
+    
+    
+    
 module Scrabble =
     open System.Threading
 
