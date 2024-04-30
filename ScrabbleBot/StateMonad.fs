@@ -88,8 +88,35 @@
               | Some v -> Success (v, s)
               | None   -> Failure (VarNotFound x))
 
-    let declare (var : string) : SM<unit> = failwith "Not implemented"   
-    let update (var : string) (value : int) : SM<unit> = failwith "Not implemented"      
+    let declare (var : string) : SM<unit> =
+        S (fun s -> 
+              if Set.contains var s.reserved then 
+                  Failure (ReservedName var)
+              else
+                  match s.vars with 
+                  | [] -> failwith "empty state"
+                  | m :: vs -> 
+                      if Map.containsKey var m then
+                          Failure (VarExists var)
+                      else
+                          Success ((), {s with vars = Map.add var 0 m :: vs}))
+        
+    let update (var : string) (value : int) : SM<unit> =
+        let rec aux = 
+            function
+            | [] -> None
+            | m :: ms ->
+                if Map.containsKey var m then
+                    Some (Map.add var value m::ms)
+                else
+                    match aux ms with
+                    | Some ms' -> Some (m :: ms')
+                    | None     -> None
+
+        S (fun s ->
+              match aux s.vars with
+              | Some vs -> Success ((), {s with vars = vs})
+              | None     -> Failure (VarNotFound var))
               
 
     
