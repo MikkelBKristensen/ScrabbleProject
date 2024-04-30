@@ -45,6 +45,8 @@ module internal Parser
         x .>> spaces .>> y
     let (>*>.) x y  =
         x >>. spaces >>. y
+    let (>**>.) x y  =
+        x >>. spaces1 >>. y
 
     let parenthesise p =
        pchar '(' >*>. p .>*> pchar ')'
@@ -81,9 +83,13 @@ module internal Parser
     let NegParse = unop (pchar '-') AtomParse |>> (fun x -> Mul (N -1, x)) <?> "Neg"
     let PVParse =  pPointValue >*>. parenthesise TermParse |>> PV <?> "PV"
     
+
+    
     do aref := choice [PVParse; NegParse; VParse; NParse; ParParse]
     
+    
     let AexpParse = TermParse 
+    
     
     let cTermParse , cref = createParserForwardedToRef<cExp>()
     
@@ -99,9 +105,55 @@ module internal Parser
     do aref := choice [CharToIntParse; NegParse; PVParse; VParse; NParse; ParParse]
     let CexpParse = cTermParse
 
-    let BexpParse = pstring "not implemented"
-
-    let stmParse = pstring "not implemented"
+    let bTermParse, bTref = createParserForwardedToRef<bExp>()
+    let bProdParse, bPref = createParserForwardedToRef<bExp>()
+    let bAtomParse, bAref = createParserForwardedToRef<bExp>()
+    
+    let AndParse = binop (pstring "/\\") bProdParse bTermParse |>> Conj <?> "And"
+    let OrParse = binop (pstring "\\/") bProdParse bTermParse |>> (fun (x,y) -> x .||. y) <?> "Or"
+    do bTref := choice [AndParse; OrParse; bProdParse]
+    
+   
+    let EqParse = binop (pchar '=') AexpParse AexpParse |>> AEq <?> "Eq"
+    let NEqParse = binop (pstring "<>") AexpParse AexpParse |>> (fun(a,b) -> a.<>.b) <?> "Not Equal"
+    let LTParse = binop (pchar '<') AexpParse AexpParse |>> (fun(a,b) -> a .<. b) <?> "Less Than"
+    let LTEQParse = binop (pstring "<=") AexpParse AexpParse |>> (fun(a,b) -> a .<=. b) <?> "Less Than or Equal"
+    let GTParse = binop (pchar '>') AexpParse AexpParse |>> (fun(a,b) -> a .>. b) <?> "Greater Than"
+    let GTEQParse = binop (pstring ">=") AexpParse AexpParse |>> (fun(a,b) -> a .>=. b) <?> "Greater Than or Equal"
+    
+    do bPref := choice [EqParse; NEqParse; LTParse; LTEQParse; GTParse; GTEQParse; bAtomParse]
+    
+    let NegBParse = unop (pchar '~') bAtomParse |>> (fun x -> ~~ x) <?> "Neg"
+    let IsLetterParse = unop pIsLetter (parenthesise cTermParse) |>> IsLetter <?> "IsLetter"
+    let IsVowelParse = unop pIsVowel (parenthesise cTermParse) |>> IsVowel <?> "IsVowel"
+    let IsDigitParse = unop pIsDigit (parenthesise cTermParse) |>> IsDigit <?> "IsDigit"
+    let FalseParse = pFalse |>> (fun _ -> FF) <?> "False"
+    let TrueParse = pTrue |>> (fun _ -> TT) <?> "True"
+    let ParBParse = parenthesise bTermParse
+    
+    do bAref := choice [TrueParse; FalseParse; NegBParse; IsLetterParse; IsVowelParse; IsDigitParse; ParBParse]
+    let BexpParse = bTermParse
+    
+    let sSeqParse, sSegRef = createParserForwardedToRef<stmnt>()
+    let sAtomParse, sAref = createParserForwardedToRef<stmnt>()
+    
+    let SeqParse = binop (pchar ';') sAtomParse sSeqParse |>> Seq <?> "Sequence"
+    do sSegRef := choice [SeqParse; sAtomParse]
+    
+    let DeclParse = pdeclare >**>. pid|>> Declare <?> "Declare"
+    let AssignParse = binop (pstring ":=") pid AexpParse|>> Ass <?> "Assign"
+    let ITEParse = unop pif (parenthesise BexpParse) .>*>.
+                   unop pthen (tuborgKlamme sSeqParse) .>*>.
+                   unop pelse sAtomParse |>>
+                   (fun ((cond,iff),elsee) -> ITE (cond, iff, elsee)) <?> "If-then-else"
+    let ITParse = unop pif (parenthesise BexpParse) .>*>.
+                  unop pthen (tuborgKlamme sSeqParse) |>>
+                  (fun(cond,iff) -> ITE (cond, iff, Skip)) <?> "If-then"
+    let WhileParse = unop pwhile (parenthesise BexpParse) .>*>.
+                     unop pdo (tuborgKlamme sSeqParse)|>> While <?> "While-loop"
+                     
+    do sAref := choice [AssignParse; DeclParse; ITEParse; ITParse; WhileParse]                 
+    let stmntParse = sSeqParse
 
     (* The rest of your parser goes here *)
     type word   = (char * int) list
