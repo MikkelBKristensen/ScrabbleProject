@@ -11,3 +11,4 @@ bin
 .json
 *.json
 *.vsidx
+.vs/ScrabbleTemplate/v17/.suo

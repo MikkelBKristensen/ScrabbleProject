@@ -65,21 +65,7 @@ module State =
     let playerAmount st  = st.playerAmount
     let playersTurn st   = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
-    
-    
-    let updateState (st : state) (mes : ClientMessage) turn =
-        let newTurn = updateTurn st.playersTurn st.playerAmount
-        match mes with
-        | CMPlaySuccess(ms, points, newpieces) ->
-            //Update hand
-            //Update tiles played
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
-        |CMPlayed (pid, ms, points) ->
-            //Update tiles played
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
-        |CMPlayFailed (pid, ms) ->
-            //Update turn
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
+
             
             
             
@@ -108,18 +94,19 @@ module Scrabble =
             let msg = recv cstream
             debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
 
+            let newTurn = State.updateTurn st.playersTurn st.playerAmount
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
-                let st' = st // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
-                let st' = st // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
-                let st' = st // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
