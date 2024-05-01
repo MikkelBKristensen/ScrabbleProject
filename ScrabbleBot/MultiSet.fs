@@ -50,7 +50,7 @@ module internal MultiSet
                 R (Map.add item count map)
             
     
-    let rec remove (item : 'a) (no : uint32) (set  : MultiSet<'a>) : MultiSet<'a> =
+    let rec remove (item : 'a) (no : uint32) (set : MultiSet<'a>) : MultiSet<'a> =
         match set with
         | R map ->
             match no with
@@ -59,20 +59,13 @@ module internal MultiSet
                 let newMap =
                     match Map.tryFind item map with
                     | None -> R map
-                    | Some c when c < 1u -> R (Map.remove item map)
+                    | Some c when c <= 1u -> R (Map.remove item map)
                     | Some c ->  remove item (no-1u) (R (Map.add item (c - 1u) map))
                 newMap
             
 
     let removeSingle (item : 'a) (set : MultiSet<'a>) : MultiSet<'a> =
-        match set with
-        | R map ->
-            let newMap =
-                match Map.tryFind item map with
-                | None -> R map
-                | Some c when c < 1u -> R (Map.remove item map)
-                | Some c ->  R (Map.add item (c - 1u) map)
-            newMap
+        remove item 1u set
 
 
     let fold (func : 'a -> 'b -> uint32 -> 'a) (acc : 'a) (set : MultiSet<'b>) : 'a =
