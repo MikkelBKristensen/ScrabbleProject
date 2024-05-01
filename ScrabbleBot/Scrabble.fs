@@ -64,15 +64,18 @@ module State =
     let forfeitedPlayers st = st.forfeitedPlayers
     
     
-    let updateState (st : state) (mes : ClientMessage) =
+    let updateState (st : state) (mes : ClientMessage) turn =
         match mes with
-        | CMPlaySuccess ->
-            
+        | CMPlaySuccess(ms, points, newpieces) ->
+            //Update hand
+            //Update tiles played
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
         |CMPlayed (pid, ms, points) ->
-            mkState board  st.dict st.playerNumber st.hand  st.playerAmount pid st.forfeitedPlayers
-            
-            
-            
+            //Update tiles played
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
+        |CMPlayFailed (pid, ms) ->
+            //Update turn
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
             
         | CMGameOver -> ()
         
