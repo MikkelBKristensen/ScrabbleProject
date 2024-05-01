@@ -80,15 +80,8 @@ module State =
     let playerAmount st  = st.playerAmount
     let playersTurn st   = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
+    let playedLetters st = st.playedLetters
 
-            
-            
-            
-    
-        
-    
-    
-    
     
 module Scrabble =
     open System.Threading
@@ -124,11 +117,9 @@ module Scrabble =
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
                 let newHand = State.updateHand st.hand ms newPieces
-
                 let newPlayedLetters = State.updatePlayedLetters st.playedLetters ms
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters // This state needs to be updated
-
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
