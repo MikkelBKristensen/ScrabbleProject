@@ -53,7 +53,7 @@ module State =
     }
 
     
-    let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount-1u)
+    let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount) + 1u
 
     // Removes the used pieces from the hand
     let removeUsedPieces (hand : MultiSet.MultiSet<uint32>) (ms : (coord * (uint32 * (char * int))) list) =
