@@ -104,22 +104,28 @@ module Scrabble =
             forcePrint $"Playerturn {State.playersTurn st}\n"
             forcePrint $"Playernumber {State.playerNumber st}\n"
 
+            if State.playerNumber st = State.playersTurn st then
+                forcePrint "Your turn!\n"
+                let input =  System.Console.ReadLine()
+                let move = RegEx.parseMove input
+                send cstream (SMPlay move)
 
-            let input =  System.Console.ReadLine()
-            let move = RegEx.parseMove input
+            else
+                forcePrint "Waiting for other player to play...\n"
+
             
 
-            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
-            send cstream (SMPlay move)
+            //debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
 
             let msg = recv cstream
-            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            //debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
 
             let newTurn = State.updateTurn st.playersTurn st.playerAmount
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
                 let newHand = State.updateHand st.hand ms newPieces
+                //let newBoard = 
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
