@@ -63,7 +63,24 @@ module State =
     let playersTurn st   = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
     
-    type SM = SM<state>
+    
+    let updateState (st : state) (mes : ClientMessage) =
+        match mes with
+        | CMPlaySuccess ->
+            
+        |CMPlayed (pid, ms, points) ->
+            mkState board  st.dict st.playerNumber st.hand  st.playerAmount pid st.forfeitedPlayers
+            
+            
+            
+            
+        | CMGameOver -> ()
+        
+            
+            
+            
+    
+        
     
     
     

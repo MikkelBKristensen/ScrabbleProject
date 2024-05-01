@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>LetterRip</RootNamespace>
-    </PropertyGroup>
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="MultiSet.fsi" />
