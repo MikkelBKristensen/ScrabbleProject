@@ -53,7 +53,23 @@ module State =
     }
 
     
-    let updateTurn (pid:uint32) (pAmount:uint32)  = (pid + 1u) % pAmount
+    let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount-1u)
+
+    // Removes the used pieces from the hand
+    let removeUsedPieces (hand : MultiSet.MultiSet<uint32>) (ms : (coord * (uint32 * (char * int))) list) =
+        List.fold (fun acc x -> MultiSet.removeSingle (fst (snd x)) acc) hand ms
+
+    // Adds the new pieces to the hand
+    let addNewPieces (newPieces : (uint32 * uint32) list) (hand : MultiSet.MultiSet<uint32>) =
+        List.fold (fun acc x -> MultiSet.addSingle (fst x) acc) hand newPieces
+    
+    // Updates the hand using the methods above
+    let updateHand (hand : MultiSet.MultiSet<uint32>) (ms: (coord * (uint32 * (char * int))) list) (newPieces : (uint32 * uint32) list) =
+        // First remove the used pieces, then add the new ones to updated hand
+        removeUsedPieces hand ms |> addNewPieces newPieces
+
+
+
 
     let mkState b d pn h pa pt fp =
         {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp}
@@ -85,6 +101,7 @@ module Scrabble =
 
             // remove the force print when you move on from manual input (or when you have learnt the format)
             forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
+            
             let input =  System.Console.ReadLine()
             let move = RegEx.parseMove input
 
@@ -98,7 +115,8 @@ module Scrabble =
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
+                let newHand = State.updateHand st.hand ms newPieces
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
