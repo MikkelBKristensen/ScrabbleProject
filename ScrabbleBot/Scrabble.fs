@@ -52,6 +52,9 @@ module State =
         forfeitedPlayers : Set<uint32>
     }
 
+    
+    let updateTurn (pid:uint32) (pAmount:uint32)  = (pid + 1u) % pAmount
+
     let mkState b d pn h pa pt fp =
         {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp}
 
@@ -65,20 +68,18 @@ module State =
     
     
     let updateState (st : state) (mes : ClientMessage) turn =
+        let newTurn = updateTurn st.playersTurn st.playerAmount
         match mes with
         | CMPlaySuccess(ms, points, newpieces) ->
             //Update hand
             //Update tiles played
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
         |CMPlayed (pid, ms, points) ->
             //Update tiles played
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
         |CMPlayFailed (pid, ms) ->
             //Update turn
-            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount turn st.forfeitedPlayers
-            
-        | CMGameOver -> ()
-        
+            mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers
             
             
             
