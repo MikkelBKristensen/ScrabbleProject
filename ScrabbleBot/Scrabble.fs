@@ -93,7 +93,7 @@ module FindMove =
     
     let FindBestWordOnHand (st : State.state) = failwith "not implemented"
         
-    let FindBestWordOnBoard st = failwith "not implemented"
+    let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
     
     
