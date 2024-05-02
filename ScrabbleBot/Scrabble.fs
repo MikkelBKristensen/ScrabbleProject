@@ -92,7 +92,7 @@ module FindMove =
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
     let FindBestWordOnHand (st : State.state) = failwith "not implemented"
-        
+    
     let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
     
