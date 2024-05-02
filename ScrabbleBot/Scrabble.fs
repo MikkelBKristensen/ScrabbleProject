@@ -100,7 +100,10 @@ module Scrabble =
                 forcePrint "Your turn!\n"
                 let input =  System.Console.ReadLine()
                 let move = RegEx.parseMove input
+                //If possible move
                 send cstream (SMPlay move)
+                //else
+                //send cstream (SMPass)
 
             else
                 forcePrint "Waiting for other player to play...\n"
