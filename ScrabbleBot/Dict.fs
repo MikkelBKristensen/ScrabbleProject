@@ -39,3 +39,4 @@ let step (c: char) (dict: Dict) =
     match dict.Children.TryGetValue c with
     | true, node -> Some (node.IsWord, node)
     | false, _ -> None
+    

@@ -81,7 +81,28 @@ module State =
     let playersTurn st   = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
     let playedLetters st = st.playedTiles
-
+module FindMove =
+    
+    
+    
+    let FindBestWordOnHand (st : State.state) =
+        st.dict |> Dictionary.
+        
+    let FindBestWordOnBoard st = failwith "not implemented"
+    
+    
+    
+    let movePath (st:State.state) =
+        if st.playedTiles.IsEmpty then
+            FindBestWordOnHand st
+        else 
+            FindBestWordOnBoard st
+            
+        // match st.playedTiles with
+        // | Map.tryFind -> FindBestWordOnHand hand
+        // | _  -> FindBestWordOnBoard playedLetters
+        
+    
     
 module Scrabble =
     open System.Threading
