@@ -97,6 +97,13 @@ module FindMove =
     let Alpha = ['_';'a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'
                  'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z';]
     
+    let iterate (list: 'a list) (i : uint32) =
+        let rec aux l i j =
+            match l with
+            | a :: b -> if j = i then a else aux b i (j + 1u)
+            | [] -> failwith "Index out of bounds"
+        aux list i 0u
+    
     let FindBestWordOnHand (st : State.state) =
         //Afprøv vilkårlig karakter fra hånden
         let cIdList = MultiSet.keys (st.hand)
