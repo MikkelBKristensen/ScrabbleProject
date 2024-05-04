@@ -96,36 +96,40 @@ module FindMove =
     // FindSuffixes is a method that takes a state and a word from playedTiles and finds all the suffixes of the word that are in the dictionary
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
-    let Alpha = ['_';'a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'
-                 'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z';]
     
-    let getItem (list: 'a list) (i : uint32) =
-        let rec aux l i j =
-            match l with
-            | a :: b -> if j = i then a else aux b i (j + 1u)
-            | [] -> failwith "Index out of bounds"
-        aux list i 0u
     
     let FindBestWordOnHand (st : State.state) =
         //Afprøv vilkårlig karakter fra hånden
         let cIdList = MultiSet.keys (st.hand)
         
-        let rec tryAssembleWord cIdList word dict =
+        let rec tryAssembleWord cIdList (dict: Dictionary.Dict) word =
             match cIdList with
             | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-            | cId::rest ->
-                let isViable = Dictionary.step (getItem Alpha cId) st.dict
+            | cId::rest -> //Take head and see if it's viable
+                let currChar = dictUtil.getItem dictUtil.Alpha cId
+                let isViable = Dictionary.step (currChar) dict
                 match isViable with
-                | None -> tryAssembleWord rest word dict
+                | None -> tryAssembleWord rest st.dict "" //Head not viable, try next
                 | Some x ->
-                    dictUtil.stepToTuple x dict
+                    word = word + (string currChar)
+                    if fst x then
+                        word //if x concludes a word, return it
+                    else
+                        //Tjek at det ikke er wrong path
+                        if ((snd (snd x)) = Dictionary.empty) then
+                            failwith "wrong input" //Should 
+                        else
+                            
+                            
+                        //Find children
+                        //Tjek med hånd
+                        //Abort eller step videre
               
                 
-                
+        tryAssembleWord cIdList st.dict ""      
             
-        //Tjek for children
-        let suffixes = st.dict |> Dictionary.step (Map.TryFind st.hand)
-        suffixes
+        
+      
         //Match children med karakter fra hånden
         //Tjek om det er ord
         //Hvis ja - Returner ord
