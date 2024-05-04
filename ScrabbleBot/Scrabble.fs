@@ -6,6 +6,7 @@ open ScrabbleUtil.ServerCommunication
 open System.IO
 open StateMonad
 open ScrabbleUtil.DebugPrint
+open Util
 
 
 
@@ -117,7 +118,7 @@ module FindMove =
                 match isViable with
                 | None -> tryAssembleWord rest word dict
                 | Some x ->
-                    Dictionary. x dict
+                    dictUtil.stepToTuple x dict
               
                 
                 

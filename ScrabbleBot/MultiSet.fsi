@@ -18,6 +18,7 @@ module internal MultiSet
     val addSingle : 'a -> MultiSet<'a> -> MultiSet<'a>
     
     val remove : 'a -> uint32 -> MultiSet<'a> -> MultiSet<'a>
+    
     val keys : MultiSet<'a> -> 'a list
     
     val removeSingle : 'a -> MultiSet<'a> -> MultiSet<'a>
