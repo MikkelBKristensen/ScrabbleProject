@@ -9,6 +9,10 @@
   <ItemGroup>
     <Compile Include="MultiSet.fsi" />
     <Compile Include="MultiSet.fs" />
+    <Compile Include="Dict.fsi" />
+    <Compile Include="Dict.fs" />
+    <Compile Include="Util.fsi" />
+    <Compile Include="Util.fs" />
     <Compile Include="FParsecLight.fsi" />
     <Compile Include="FParsecLight.fs" />
     <Compile Include="StateMonad.fsi" />
@@ -18,8 +22,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="Scrabble.fsi" />
     <Compile Include="Scrabble.fs" />
-    <Compile Include="Dict.fsi" />
-    <Compile Include="Dict.fs" />
+    
   </ItemGroup>
 
   <ItemGroup>

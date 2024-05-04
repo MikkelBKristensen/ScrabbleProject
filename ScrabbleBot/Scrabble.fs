@@ -8,6 +8,7 @@ open StateMonad
 open ScrabbleUtil.DebugPrint
 
 
+
 // The RegEx module is only used to parse human input. It is not used for the final product.
 
 module RegEx =
@@ -97,7 +98,7 @@ module FindMove =
     let Alpha = ['_';'a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'
                  'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z';]
     
-    let iterate (list: 'a list) (i : uint32) =
+    let getItem (list: 'a list) (i : uint32) =
         let rec aux l i j =
             match l with
             | a :: b -> if j = i then a else aux b i (j + 1u)
@@ -108,11 +109,16 @@ module FindMove =
         //Afprøv vilkårlig karakter fra hånden
         let cIdList = MultiSet.keys (st.hand)
         
-        let rec tryStartWord cIdList =
+        let rec tryAssembleWord cIdList word dict =
             match cIdList with
-            | [] -> [] //When calling method and this is the result, we either swap or pass
+            | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
             | cId::rest ->
-                Dictionary.step List.
+                let isViable = Dictionary.step (getItem Alpha cId) st.dict
+                match isViable with
+                | None -> tryAssembleWord rest word dict
+                | Some x ->
+                    Dictionary. x dict
+              
                 
                 
             
