@@ -97,50 +97,47 @@ module FindMove =
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
     
-    
     let FindBestWordOnHand (st : State.state) =
         //Afprøv vilkårlig karakter fra hånden
-        let cIdList = MultiSet.keys (st.hand)
-        
-        let rec tryAssembleWord cIdList (dict: Dictionary.Dict) word =
+        (*
+        let rec tryAssembleWord hand (dict: Dictionary.Dict) (word: char list) =
+            let cIdList = MultiSet.keys (hand)
             match cIdList with
             | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-            | cId::rest -> //Take head and see if it's viable
+            | cId::_ -> //Take head and see if it's viable
                 let currChar = dictUtil.getItem dictUtil.Alpha cId
                 let isViable = Dictionary.step (currChar) dict
                 match isViable with
-                | None -> tryAssembleWord rest st.dict "" //Head not viable, try next
+                | None -> tryAssembleWord hand st.dict List.Empty //Head not viable, try next
                 | Some x ->
-                    word = word + (string currChar)
-                    if fst x then
-                        word //if x concludes a word, return it
-                    else
-                        //Tjek at det ikke er wrong path
-                        if ((snd (snd x)) = Dictionary.empty) then
-                            failwith "wrong input" //Should 
-                        else
+                    let emptyDict = Dictionary.empty ()
+                    match x with
+                    | false, emptyDict -> failwith "wrong input"
+                    | x ->
+                        let word = List.append word [currChar] //Add character to word
+                        let updatedHand = MultiSet.removeSingle cId hand //Remove character from hand
+                        match fst x with
+                        | true -> word //If x concludes a word, return it
+                        | false -> tryAssembleWord updatedHand (snd x) word //If x does not conclude a word, continue
+         *)               
                             
                             
                         //Find children
                         //Tjek med hånd
                         //Abort eller step videre
               
-                
-        tryAssembleWord cIdList st.dict ""      
+        
+        let rec tryAssembleWord (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: char list) =
+            let cIdHand = (MultiSet.keys hand)
+            match cIdHand with
+            | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
+            
             
         
-      
-        //Match children med karakter fra hånden
-        //Tjek om det er ord
-        //Hvis ja - Returner ord
-        //Hvis nej - step videre
+                
+        //tryAssembleWord st.hand st.dict List.Empty      
+            
         
-        //Match children med hånd
-        //Tjek om det er ord
-        //Hvis ja - Returner ord
-        //Hvis nej - step videre
-        
-    
     let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
     
