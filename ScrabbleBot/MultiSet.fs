@@ -17,7 +17,7 @@ module internal MultiSet
         match set with
         | R map -> Map.containsKey item map 
 
-
+   
     let numItems (item : 'a) (set : MultiSet<'a>) =
         let value =
             match set with
@@ -74,7 +74,9 @@ module internal MultiSet
             Map.fold func acc map
 
 
-        
+    let keys (set : MultiSet<'a>) =
+        match set with
+        | R map -> Map.keys map |> List.ofSeq
         
     let foldBack (func : 'a -> uint32 -> 'b -> 'b) (set : MultiSet<'a>) (acc : 'b) =
         match set with

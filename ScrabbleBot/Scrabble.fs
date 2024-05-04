@@ -91,11 +91,37 @@ module FindMove =
     // Method that takes a state, chooses a tile from playedTiles and find the word(s) it is part of.
     // Next method uses Step to see if we can add a character on Hand to create a new word from the existing word(s)
     
-    // FindSuffixes is a method that takes a state and a word from playedLetters and finds all the suffixes of the word that are in the dictionary
+    // FindSuffixes is a method that takes a state and a word from playedTiles and finds all the suffixes of the word that are in the dictionary
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
+    let Alpha = ['_';'a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'
+                 'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z';]
     
-    let FindBestWordOnHand (st : State.state) = failwith "not implemented"
+    let FindBestWordOnHand (st : State.state) =
+        //Afprøv vilkårlig karakter fra hånden
+        let cIdList = MultiSet.keys (st.hand)
+        
+        let rec tryStartWord cIdList =
+            match cIdList with
+            | [] -> [] //When calling method and this is the result, we either swap or pass
+            | cId::rest ->
+                Dictionary.step List.
+                
+                
+            
+        //Tjek for children
+        let suffixes = st.dict |> Dictionary.step (Map.TryFind st.hand)
+        suffixes
+        //Match children med karakter fra hånden
+        //Tjek om det er ord
+        //Hvis ja - Returner ord
+        //Hvis nej - step videre
+        
+        //Match children med hånd
+        //Tjek om det er ord
+        //Hvis ja - Returner ord
+        //Hvis nej - step videre
+        
     
     let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
