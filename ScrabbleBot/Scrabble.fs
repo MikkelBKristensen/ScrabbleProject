@@ -102,6 +102,7 @@ module FindMove =
             | [_] -> [] // If there's only one element, return an empty list
             | head :: tail -> head :: removeTail tail
 
+        // An Idea: Pass along the parameters to next recursion in a 'state' manner. This should help backtracking.
         let rec tryAssembleWord (permCIdList: uint32 list) (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
             match cIdList with
             | [] -> List.Empty //When calling method and this is the result, we either swap or pass
