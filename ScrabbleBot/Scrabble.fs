@@ -90,35 +90,46 @@ module State =
 module FindMove =
     // Finds the word(s) a tile is a part of by looking in all directions from the tile and
     // returning the horizontal and vertical word(s) the tile is a part of.
-    let findWordFromTile (state: State.state) (tile: coord) : string * string =
+    let findWordFromTile (playedTiles: Map<coord,char>) (tile: coord) : string * string =
         let rec findWordInDirection (direction: coord) (currentTile: coord) : char seq =
-            match Map.tryFind currentTile state.playedTiles with
+            match Map.tryFind currentTile playedTiles with
             | Some letter ->
                 let nextTile = (fst currentTile + fst direction, snd currentTile + snd direction)
                 Seq.append (Seq.singleton letter) (findWordInDirection direction nextTile)
             | None -> Seq.empty
 
-        let leftWord = findWordInDirection (-1, 0) tile
-        let rightWord = findWordInDirection (1, 0) tile
-        let upWord = findWordInDirection (0, -1) tile
-        let downWord = findWordInDirection (0, 1) tile
+        let getHorizontalWord () =
+            let leftWord = findWordInDirection (-1, 0) tile
+            let rightWord = findWordInDirection (1, 0) tile |> Seq.skip 1 // Skip the original tile's character
+            let horizontalLetters = Seq.append (Seq.rev leftWord) rightWord |> Seq.toArray
+            if Array.length horizontalLetters > 1 then String(horizontalLetters) else null // Exclude single-letter words
 
-        let horizontalWord = Seq.append (Seq.rev leftWord) rightWord |> Seq.toArray |> String
-        let verticalWord = Seq.append (Seq.rev upWord) downWord |> Seq.toArray |> String
+        let getVerticalWord () =
+            let upWord = findWordInDirection (0, -1) tile
+            let downWord = findWordInDirection (0, 1) tile |> Seq.skip 1 // Skip the original tile's character
+            let verticalLetters = Seq.append (Seq.rev upWord) downWord |> Seq.toArray
+            if Array.length verticalLetters > 1 then String(verticalLetters) else null // Exclude single-letter words
 
-        (horizontalWord, verticalWord)
+        (getHorizontalWord (), getVerticalWord ())
 
-    let findAllWords (state: State.state) : (coord * (string * string)) list =
+
+
+
+
+
+
+
+    let findAllWords (playedTiles: Map<coord,char>) : (coord * (string * string)) list =
         Map.fold (fun acc tile letter ->
-            let (horizontalWord, verticalWord) = findWordFromTile state tile
+            let (horizontalWord, verticalWord) = findWordFromTile playedTiles tile
             (tile, (horizontalWord, verticalWord)) :: acc
-        ) [] state.playedTiles
+        ) [] playedTiles
 
     // Updates the wordMap with the new words from the move
     let updateWordMap (move: (coord * (uint32 * (char * int))) list) (state: State.state) =
             let wordMap = state.wordMap
             List.fold (fun acc (tile, _) ->
-                let (horizontalWord, verticalWord) = findWordFromTile state tile
+                let (horizontalWord, verticalWord) = findWordFromTile state.playedTiles tile
                 Map.add tile (horizontalWord, verticalWord) acc
             ) wordMap move
     
@@ -230,9 +241,10 @@ module Scrabble =
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
                 let newHand = State.updateHand st.hand ms newPieces
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
-                let newWordMap = FindMove.updateWordMap ms st
+                let wordsPlayed = FindMove.findAllWords newPlayedLetters
+                // let newWordMap = FindMove.updateWordMap ms st
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters newWordMap // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters st.wordMap // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
