@@ -97,7 +97,7 @@ module FindMove =
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
     
-    let FindBestWordOnHand (st : State.state) =
+    //let FindBestWordOnHand (st : State.state) =
         //Afprøv vilkårlig karakter fra hånden
         (*
         let rec tryAssembleWord hand (dict: Dictionary.Dict) (word: char list) =
@@ -119,32 +119,32 @@ module FindMove =
                         match fst x with
                         | true -> word //If x concludes a word, return it
                         | false -> tryAssembleWord updatedHand (snd x) word //If x does not conclude a word, continue
-         *)               
-                            
-                            
+         *)                
                         //Find children
                         //Tjek med hånd
                         //Abort eller step videre
-              
-        
-        let rec tryAssembleWord (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: char list) =
-            let cIdHand = (MultiSet.keys hand)
-            match cIdHand with
-            | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-            
-            
-        
-                
+        // let rec tryAssembleWord (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: char list) =
+        //     let cIdHand = (MultiSet.keys hand)
+        //     match cIdHand with
+        //     | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
+     
         //tryAssembleWord st.hand st.dict List.Empty      
             
         
     let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
+    let FindWordFromHand st  : char list =
+        
+        let rec wordBuilder =
+            let word = 
+            let charSet = multisetUtil.handToCharMultiset st.hand
+            
+            List.fold (fun (word : string) ())
+        
     
-    
-    let movePath (st:State.state) =
+    let decisionStarter (st:State.state) =
         if st.playedTiles.IsEmpty then
-            FindBestWordOnHand st
+            FindWordFromHand st
         else 
             FindBestWordOnBoard st
             
