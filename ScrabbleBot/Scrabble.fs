@@ -39,7 +39,13 @@ module RegEx =
         hand |>
         MultiSet.fold (fun _ x i -> forcePrint (sprintf "%d -> (%A, %d)\n" x (Map.find x pieces) i)) ()
 
-module State = 
+module State =
+    
+    type WordInfo = {
+        LastLetterCoord: coord
+        Word: string
+    }
+    
     // Make sure to keep your state localised in this module. It makes your life a whole lot easier.
     // Currently, it only keeps track of your hand, your player number, your board, and your dictionary,
     // but it could, potentially, keep track of other useful
@@ -54,7 +60,7 @@ module State =
         playersTurn      : uint32
         forfeitedPlayers : Set<uint32>
         playedTiles      : Map<coord,char>
-        wordMap          : Map<coord, (string * string)>
+        wordMap          : Map<string, WordInfo>
     }
     let mkState b d pn h pa pt fp pl wm =
         {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp; playedTiles = pl; wordMap = wm; }
@@ -77,17 +83,18 @@ module State =
     let updatePlayedLetters (PL : Map<coord,char >)  (ms : (coord * (uint32 * (char * int))) list)=
         List.fold (fun acc (x, y) -> Map.add (x) (fst (snd y)) acc) PL ms
 
-    let board st         = st.board
-    let dict st          = st.dict
-    let playerNumber st  = st.playerNumber
-    let hand st          = st.hand
-    let playerAmount st  = st.playerAmount
-    let playersTurn st   = st.playersTurn
+    let board st            = st.board
+    let dict st             = st.dict
+    let playerNumber st     = st.playerNumber
+    let hand st             = st.hand
+    let playerAmount st     = st.playerAmount
+    let playersTurn st      = st.playersTurn
     let forfeitedPlayers st = st.forfeitedPlayers
-    let playedLetters st = st.playedTiles
+    let playedLetters st    = st.playedTiles
 
 
 module FindMove =
+    
     // Finds the word(s) a tile is a part of by looking in all directions from the tile and
     // returning the horizontal and vertical word(s) the tile is a part of.
     let findWordFromTile (playedTiles: Map<coord,char>) (tile: coord) : string * string =
@@ -112,19 +119,36 @@ module FindMove =
 
         (getHorizontalWord (), getVerticalWord ())
 
-    let findAllWords (playedTiles: Map<coord,char>) : (coord * (string * string)) list =
+    let addWordIfNotEmpty (wordCoordMap: Map<string, State.WordInfo>) (word: string) (lastLetterCoord: coord) =
+            if word <> null then
+                Map.add word { State.WordInfo.LastLetterCoord = lastLetterCoord; State.WordInfo.Word = word } wordCoordMap
+            else
+                wordCoordMap
+                
+    let findAllWords (playedTiles: Map<coord,char>) : Map<string, State.WordInfo> =
         Map.fold (fun acc tile _ ->
             let (horizontalWord, verticalWord) = findWordFromTile playedTiles tile
-            (tile, (horizontalWord, verticalWord)) :: acc
-        ) [] playedTiles
+            let lastLetterCoord = tile // Extract the last letter coordinate
+
+            let updatedAcc =
+                addWordIfNotEmpty (addWordIfNotEmpty acc horizontalWord lastLetterCoord) verticalWord lastLetterCoord
+            updatedAcc
+        ) Map.empty playedTiles
+
+
+
+    
 
     // Updates the wordMap with the new words from the move
+    (*
     let updateWordMap (move: (coord * (uint32 * (char * int))) list) (state: State.state) =
             let wordMap = state.wordMap
             List.fold (fun acc (tile, _) ->
                 let (horizontalWord, verticalWord) = findWordFromTile state.playedTiles tile
                 Map.add tile (horizontalWord, verticalWord) acc
             ) wordMap move
+    *)
+    
     
     // Methods that finds the word(s) a tile is a part of
     
@@ -235,16 +259,15 @@ module Scrabble =
                 let newHand = State.updateHand st.hand ms newPieces
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
                 let wordsPlayed = FindMove.findAllWords newPlayedLetters
-                // let newWordMap = FindMove.updateWordMap ms st
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters st.wordMap // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
-                let newWordMap = FindMove.updateWordMap ms st
+                let wordsPlayed = FindMove.findAllWords newPlayedLetters
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters newWordMap // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed // This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
