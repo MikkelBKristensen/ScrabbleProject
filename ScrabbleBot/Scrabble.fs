@@ -1,5 +1,6 @@
 ﻿namespace LetterRip
 
+open System
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
 
@@ -52,10 +53,11 @@ module State =
         playerAmount     : uint32
         playersTurn      : uint32
         forfeitedPlayers : Set<uint32>
-        playedTiles    : Map<coord,char >
+        playedTiles      : Map<coord,char>
+        wordMap          : Map<coord, (string * string)>
     }
-    let mkState b d pn h pa pt fp  pl =
-        {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp; playedTiles = pl }
+    let mkState b d pn h pa pt fp pl wm =
+        {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt; forfeitedPlayers = fp; playedTiles = pl; wordMap = wm; }
     
     let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount) + 1u
 
@@ -86,6 +88,39 @@ module State =
 
 
 module FindMove =
+    // Finds the word(s) a tile is a part of by looking in all directions from the tile and
+    // returning the horizontal and vertical word(s) the tile is a part of.
+    let findWordFromTile (state: State.state) (tile: coord) : string * string =
+        let rec findWordInDirection (direction: coord) (currentTile: coord) : char seq =
+            match Map.tryFind currentTile state.playedTiles with
+            | Some letter ->
+                let nextTile = (fst currentTile + fst direction, snd currentTile + snd direction)
+                Seq.append (Seq.singleton letter) (findWordInDirection direction nextTile)
+            | None -> Seq.empty
+
+        let leftWord = findWordInDirection (-1, 0) tile
+        let rightWord = findWordInDirection (1, 0) tile
+        let upWord = findWordInDirection (0, -1) tile
+        let downWord = findWordInDirection (0, 1) tile
+
+        let horizontalWord = Seq.append (Seq.rev leftWord) rightWord |> Seq.toArray |> String
+        let verticalWord = Seq.append (Seq.rev upWord) downWord |> Seq.toArray |> String
+
+        (horizontalWord, verticalWord)
+
+    let findAllWords (state: State.state) : (coord * (string * string)) list =
+        Map.fold (fun acc tile letter ->
+            let (horizontalWord, verticalWord) = findWordFromTile state tile
+            (tile, (horizontalWord, verticalWord)) :: acc
+        ) [] state.playedTiles
+
+    // Updates the wordMap with the new words from the move
+    let updateWordMap (move: (coord * (uint32 * (char * int))) list) (state: State.state) =
+            let wordMap = state.wordMap
+            List.fold (fun acc (tile, _) ->
+                let (horizontalWord, verticalWord) = findWordFromTile state tile
+                Map.add tile (horizontalWord, verticalWord) acc
+            ) wordMap move
     
     // Methods that finds the word(s) a tile is a part of
     
@@ -96,10 +131,10 @@ module FindMove =
     // FindSuffixes is a method that takes a state and a word from playedTiles and finds all the suffixes of the word that are in the dictionary
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
-    
+    (*
     let FindBestWordOnHand (st : State.state) =
         //Afprøv vilkårlig karakter fra hånden
-        (*
+        
         let rec tryAssembleWord hand (dict: Dictionary.Dict) (word: char list) =
             let cIdList = MultiSet.keys (hand)
             match cIdList with
@@ -126,12 +161,13 @@ module FindMove =
                         //Tjek med hånd
                         //Abort eller step videre
               
+        (*
         
         let rec tryAssembleWord (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: char list) =
             let cIdHand = (MultiSet.keys hand)
             match cIdHand with
             | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-            
+        *)
             
         
                 
@@ -141,12 +177,14 @@ module FindMove =
     let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
     
     
-    
+    (*
     let movePath (st:State.state) =
         if st.playedTiles.IsEmpty then
             FindBestWordOnHand st
         else 
             FindBestWordOnBoard st
+    *)
+    
             
         // match st.playedTiles with
         // | Map.tryFind -> FindBestWordOnHand hand
@@ -192,18 +230,20 @@ module Scrabble =
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
                 let newHand = State.updateHand st.hand ms newPieces
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
+                let newWordMap = FindMove.updateWordMap ms st
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters newWordMap // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
+                let newWordMap = FindMove.updateWordMap ms st
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters newWordMap // This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles// This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordMap // This state needs to be updated
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
@@ -236,5 +276,5 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet numPlayers playerTurn Set.empty<uint32> Map.empty )
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet numPlayers playerTurn Set.empty<uint32> Map.empty Map.empty )
         
