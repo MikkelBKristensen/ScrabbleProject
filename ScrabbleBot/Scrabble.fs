@@ -94,7 +94,7 @@ module FindMove =
         if the first "try" isn't correct.
     
     *)
-    let FindBestWordOnHand (st : State.state) =
+    let FindWordFromHand (st : State.state) =
 
         let rec removeTail list =
             match list with
@@ -102,7 +102,6 @@ module FindMove =
             | [_] -> [] // If there's only one element, return an empty list
             | head :: tail -> head :: removeTail tail
 
-        
         let rec tryAssembleWord (permCIdList: uint32 list) (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
             match cIdList with
             | [] -> List.Empty //When calling method and this is the result, we either swap or pass
@@ -143,33 +142,14 @@ module FindMove =
         let cIdList = MultiSet.keys (st.hand)
         tryAssembleWord cIdList cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
     
-            
-        
-
-    
-    let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
-    (*
-    let FindWordFromHand st  : char list =
-        
-        let rec wordBuilder =
-            let word = 
-            let charSet = multisetUtil.handToCharMultiset st.hand
-            
-            List.fold (fun (word : string) ())
-  
+    let FindWordOnBoard (st : State.state) = failwith "not implemented"
     
     let decisionStarter (st:State.state) =
         if st.playedTiles.IsEmpty then
             FindWordFromHand st
         else 
-            FindBestWordOnBoard st
-            
-        // match st.playedTiles with
-        // | Map.tryFind -> FindBestWordOnHand hand
-        // | _  -> FindBestWordOnBoard playedLetters
-        
-        *)  
-    
+            FindWordOnBoard st
+       
 module Scrabble =
     open System.Threading
 
@@ -185,9 +165,7 @@ module Scrabble =
 
             if State.playerNumber st = State.playersTurn st then
                 forcePrint "Your turn!\n"
-                let word = FindMove.FindBestWordOnHand st // If empty word is returned, pass or swap
-                //forcePrint (string word)
-                //let input =  System.Console.ReadLine()
+                let word = FindMove.decisionStarter st // If empty word is returned, pass or swap
                 let move = word //RegEx.parseMove input
                 //If possible move
                 send cstream (SMPlay move)
