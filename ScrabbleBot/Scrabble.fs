@@ -100,13 +100,32 @@ module FindMove =
     
     let FindBestWordOnHand (st : State.state) =
 
-        let rec tryAssembleWord (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
+        let rec removeTail list =
+            match list with
+            | [] -> []
+            | [_] -> [] // If there's only one element, return an empty list
+            | head :: tail -> head :: removeTail tail
+
+        
+        let rec tryAssembleWord (permCIdList: uint32 list) (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
             match cIdList with
             | [] -> List.Empty //When calling method and this is the result, we either swap or pass
             | head :: rest ->
                 let step = Dictionary.step (multisetUtil.cIdToChar head) dict // Perform step
                 match step with
-                | None -> tryAssembleWord rest hand dict word // No word with head char; Try again with rest
+                | None -> // No word with head char; Try again with rest
+                    match tryAssembleWord permCIdList rest hand dict word with
+                    | [] ->
+                        if word.IsEmpty then
+                            match permCIdList with
+                            | h :: t ->
+                                if head < h then
+                                    tryAssembleWord (List.append t [h]) (List.append t [h]) st.hand dict []
+                                else
+                                    List.Empty
+                        else
+                            tryAssembleWord permCIdList (List.append rest [head]) hand dict (removeTail word) // Retry with the rest of the list and clear the current word
+                    | result -> result // Return the result obtained from the recursive call
                 | Some x ->
                     let word = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
                     if fst x then // Indicates a finished word; Hand doesn't need updating internally
@@ -114,7 +133,7 @@ module FindMove =
                     else
                         let hand = MultiSet.removeSingle head hand // Removes tile from hand
                         let cIdList = MultiSet.keys (hand) // Updates cIdList
-                        tryAssembleWord cIdList hand (snd x) word // Recursive call
+                        tryAssembleWord permCIdList cIdList hand (snd x) word // Recursive call
                         
         
         let rec assignCoords (coord: (int * int)) (advance: (int * int)) (move: ((int * int) * (uint32 * (char * int))) list) (word: (uint32 *(char * int)) list) =
@@ -126,7 +145,7 @@ module FindMove =
                 assignCoords coord advance move rest
                 
         let cIdList = MultiSet.keys (st.hand)
-        tryAssembleWord cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
+        tryAssembleWord cIdList cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
     
             
         
