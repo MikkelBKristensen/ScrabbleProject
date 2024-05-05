@@ -1,10 +1,10 @@
 
 
 
-module LetterRip.Util
-
+module internal LetterRip.Util
+    open MultiSet
     open Dictionary
-    module dictUtil =
+    module internal dictUtil =
 
         // let tupleExtract (res : (bool * Dict) option) =
         //     match res with
@@ -34,5 +34,11 @@ module LetterRip.Util
                 | [] -> failwith "Index out of bounds"
             aux list i 0u
 
-
+    module multisetUtil =
+        let cIdToChar id = dictUtil.getItem dictUtil.Alpha id
+        
+        //Takes hand a makes 
+        let handToCharMultiset = MultiSet.map (fun x -> [cIdToChar x])
+        
+        
 
