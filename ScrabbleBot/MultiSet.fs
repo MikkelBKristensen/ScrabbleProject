@@ -83,11 +83,14 @@ module internal MultiSet
         | R map ->
             Map.foldBack func map acc
     
-    let ofList (_ : 'a list) : MultiSet<'a> = empty
-    let toList (_ : MultiSet<'a>) : 'a list = []
+    let ofList (ls : 'a list) : MultiSet<'a> = List.fold (fun acc item -> addSingle item acc) empty ls
+    let toList (set : MultiSet<'a>) : 'a list =
+        foldBack (fun item count acc ->
+        List.init (int count) (fun _ -> item) @ acc
+        ) set []
 
 
-    let map (_ : 'a -> 'b) (_ : MultiSet<'a>) : MultiSet<'b> = empty
+    let map (func : 'a -> 'b) (set : MultiSet<'a>) : MultiSet<'b> = ofList (List.map func (toList set))
 
     let union (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
     let sum (_ : MultiSet<'a>) (_ : MultiSet<'a>) : MultiSet<'a> = empty
