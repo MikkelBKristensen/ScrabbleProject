@@ -1,9 +1,6 @@
-
-
-
 module internal LetterRip.Util
-    open MultiSet
-    open Dictionary
+
+    open LetterRip.Dictionary
     module internal dictUtil =
 
         // let tupleExtract (res : (bool * Dict) option) =
@@ -38,7 +35,7 @@ module internal LetterRip.Util
         let cIdToChar id = dictUtil.getItem dictUtil.Alpha id
         
         //Takes hand a makes 
-        let handToCharMultiset = MultiSet.map (fun x -> [cIdToChar x])
+        //let handToCharMultiset = MultiSet.map (fun x -> [cIdToChar x])
         
         
 
