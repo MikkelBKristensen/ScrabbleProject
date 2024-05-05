@@ -112,15 +112,8 @@ module FindMove =
 
         (getHorizontalWord (), getVerticalWord ())
 
-
-
-
-
-
-
-
     let findAllWords (playedTiles: Map<coord,char>) : (coord * (string * string)) list =
-        Map.fold (fun acc tile letter ->
+        Map.fold (fun acc tile _ ->
             let (horizontalWord, verticalWord) = findWordFromTile playedTiles tile
             (tile, (horizontalWord, verticalWord)) :: acc
         ) [] playedTiles
