@@ -88,16 +88,12 @@ module State =
 
 module FindMove =
     
-    // Methods that finds the word(s) a tile is a part of
+    (*
+        The method to find a word to start the game of with, is buggy -
+        cIDlist is not backtracked properly, so we are limiting ourselves in possibilities of spelling a new word,
+        if the first "try" isn't correct.
     
-    
-    // Method that takes a state, chooses a tile from playedTiles and find the word(s) it is part of.
-    // Next method uses Step to see if we can add a character on Hand to create a new word from the existing word(s)
-    
-    // FindSuffixes is a method that takes a state and a word from playedTiles and finds all the suffixes of the word that are in the dictionary
-    // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
-    
-    
+    *)
     let FindBestWordOnHand (st : State.state) =
 
         let rec removeTail list =
