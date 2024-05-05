@@ -3,9 +3,9 @@
 
 module internal LetterRip.Util
     open MultiSet
-    open Dictionary
+    open LetterRip.Dictionary
     module internal dictUtil =
-
+        
         // let tupleExtract (res : (bool * Dict) option) =
         //     match res with
         //     | Some (a, b) -> (a, b)
@@ -24,8 +24,9 @@ module internal LetterRip.Util
             
             
          
-        let Alpha = ['_';'a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o';
-                                'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z';]
+        let Alpha = ['_';'A'; 'B'; 'C'; 'D'; 'E'; 'F'; 'G'; 'H'; 'I'; 'J'; 'K'; 'L'; 'M'; 'N'; 'O'; 'P'; 'Q'; 'R'; 'S'; 'T'; 'U'; 'V'; 'W'; 'X'; 'Y'; 'Z']
+
+        let PointValue = [0; 1; 3; 3; 2; 1; 4; 2; 4; 1; 8; 5; 1; 3; 1; 1; 3; 10; 1; 1; 1; 4; 4; 8; 4; 10]
     
         let getItem (list: 'a list) (i : uint32) =
             let rec aux l i j =
@@ -37,8 +38,10 @@ module internal LetterRip.Util
     module multisetUtil =
         let cIdToChar id = dictUtil.getItem dictUtil.Alpha id
         
+        let cIdToPV id = dictUtil.getItem dictUtil.PointValue id
+
         //Takes hand a makes 
-        let handToCharMultiset = MultiSet.map (fun x -> [cIdToChar x])
+        //let handToCharMultiset (set: MultiSet<uint32>) = MultiSet.map (fun x -> [cIdToChar x])
         
         
 

@@ -23,7 +23,7 @@ let rec insert (word: string) (dict: Dict) =
             | false, _ -> empty ()
         let updatedChild = insert tail child
         dict.Children.[head] <- updatedChild
-        dict
+        { dict with Children = dict.Children }
 
 let rec lookup (word: string) (dict: Dict) =
     match word with

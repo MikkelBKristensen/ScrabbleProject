@@ -1,12 +1,13 @@
 ﻿namespace LetterRip
 
+open MultiSet
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
 
 open System.IO
 open StateMonad
 open ScrabbleUtil.DebugPrint
-open Util
+open LetterRip.Util
 
 
 
@@ -97,42 +98,42 @@ module FindMove =
     // We then check if we can add a character(s) from Hand to create a new word from the existing word(s)
     
     
-    //let FindBestWordOnHand (st : State.state) =
-        //Afprøv vilkårlig karakter fra hånden
-        (*
-        let rec tryAssembleWord hand (dict: Dictionary.Dict) (word: char list) =
-            let cIdList = MultiSet.keys (hand)
+    let FindBestWordOnHand (st : State.state) =
+
+        let rec tryAssembleWord (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
             match cIdList with
-            | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-            | cId::_ -> //Take head and see if it's viable
-                let currChar = dictUtil.getItem dictUtil.Alpha cId
-                let isViable = Dictionary.step (currChar) dict
-                match isViable with
-                | None -> tryAssembleWord hand st.dict List.Empty //Head not viable, try next
+            | [] -> List.Empty //When calling method and this is the result, we either swap or pass
+            | head :: rest ->
+                let step = Dictionary.step (multisetUtil.cIdToChar head) dict // Perform step
+                match step with
+                | None -> tryAssembleWord rest hand dict word // No word with head char; Try again with rest
                 | Some x ->
-                    let emptyDict = Dictionary.empty ()
-                    match x with
-                    | false, emptyDict -> failwith "wrong input"
-                    | x ->
-                        let word = List.append word [currChar] //Add character to word
-                        let updatedHand = MultiSet.removeSingle cId hand //Remove character from hand
-                        match fst x with
-                        | true -> word //If x concludes a word, return it
-                        | false -> tryAssembleWord updatedHand (snd x) word //If x does not conclude a word, continue
-         *)                
-                        //Find children
-                        //Tjek med hånd
-                        //Abort eller step videre
-        // let rec tryAssembleWord (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: char list) =
-        //     let cIdHand = (MultiSet.keys hand)
-        //     match cIdHand with
-        //     | [] -> failwith "No words can be played" //When calling method and this is the result, we either swap or pass
-     
-        //tryAssembleWord st.hand st.dict List.Empty      
+                    let word = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
+                    if fst x then // Indicates a finished word; Hand doesn't need updating internally
+                        word
+                    else
+                        let hand = MultiSet.removeSingle head hand // Removes tile from hand
+                        let cIdList = MultiSet.keys (hand) // Updates cIdList
+                        tryAssembleWord cIdList hand (snd x) word // Recursive call
+                        
+        
+        let rec assignCoords (coord: (int * int)) (advance: (int * int)) (move: ((int * int) * (uint32 * (char * int))) list) (word: (uint32 *(char * int)) list) =
+            match word with
+            | [] -> move // return empty word for passing/swapping
+            | head :: rest ->
+                let move = List.append move [(coord, head)]
+                let coord = ((fst coord)+(fst advance), (snd coord)+(snd advance))
+                assignCoords coord advance move rest
+                
+        let cIdList = MultiSet.keys (st.hand)
+        tryAssembleWord cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
+    
             
         
-    let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
+
     
+    let FindBestWordOnBoard (st : State.state) = failwith "not implemented"
+    (*
     let FindWordFromHand st  : char list =
         
         let rec wordBuilder =
@@ -140,7 +141,7 @@ module FindMove =
             let charSet = multisetUtil.handToCharMultiset st.hand
             
             List.fold (fun (word : string) ())
-        
+  
     
     let decisionStarter (st:State.state) =
         if st.playedTiles.IsEmpty then
@@ -152,7 +153,7 @@ module FindMove =
         // | Map.tryFind -> FindBestWordOnHand hand
         // | _  -> FindBestWordOnBoard playedLetters
         
-    
+        *)  
     
 module Scrabble =
     open System.Threading
@@ -169,8 +170,10 @@ module Scrabble =
 
             if State.playerNumber st = State.playersTurn st then
                 forcePrint "Your turn!\n"
-                let input =  System.Console.ReadLine()
-                let move = RegEx.parseMove input
+                let word = FindMove.FindBestWordOnHand st // If empty word is returned, pass or swap
+                //forcePrint (string word)
+                //let input =  System.Console.ReadLine()
+                let move = word //RegEx.parseMove input
                 //If possible move
                 send cstream (SMPlay move)
                 //else
