@@ -95,27 +95,35 @@ module State =
 
 module FindMove =
     
-    // Finds the word(s) a tile is a part of by looking in all directions from the tile and
+    // Finds the word(s) a tile is a part of by looking in Left of original tile and then right of original tile
     // returning the horizontal and vertical word(s) the tile is a part of.
     let findWordFromTile (playedTiles: Map<coord,char>) (tile: coord) : string * string =
+        
         let rec findWordInDirection (direction: coord) (currentTile: coord) : char seq =
             match Map.tryFind currentTile playedTiles with
             | Some letter ->
                 let nextTile = (fst currentTile + fst direction, snd currentTile + snd direction)
                 Seq.append (Seq.singleton letter) (findWordInDirection direction nextTile)
             | None -> Seq.empty
-
+        
+        
         let getHorizontalWord () =
+            // Find the chars to the left of the tile, including original tiles char
             let leftWord = findWordInDirection (-1, 0) tile
-            let rightWord = findWordInDirection (1, 0) tile |> Seq.skip 1 // Skip the original tile's character
+            // Skip the original tile's character, and find the chars to the right of the tile
+            let rightWord = findWordInDirection (1, 0) tile |> Seq.skip 1
+            // Concat the two sequences and convert to array
             let horizontalLetters = Seq.append (Seq.rev leftWord) rightWord |> Seq.toArray
-            if Array.length horizontalLetters > 1 then String(horizontalLetters) else null // Exclude single-letter words
+            // Exclude single-letter "words" since they are not part of an actual word
+            if Array.length horizontalLetters > 1 then String(horizontalLetters) else null 
 
         let getVerticalWord () =
             let upWord = findWordInDirection (0, -1) tile
-            let downWord = findWordInDirection (0, 1) tile |> Seq.skip 1 // Skip the original tile's character
+            // Skip the original tile's character here too
+            let downWord = findWordInDirection (0, 1) tile |> Seq.skip 1 
             let verticalLetters = Seq.append (Seq.rev upWord) downWord |> Seq.toArray
-            if Array.length verticalLetters > 1 then String(verticalLetters) else null // Exclude single-letter words
+            // Exclude single-letter words
+            if Array.length verticalLetters > 1 then String(verticalLetters) else null 
 
         (getHorizontalWord (), getVerticalWord ())
 
