@@ -232,7 +232,7 @@ module FindMove =
                     
                     
                     
-        let cIdList = MultiSet.keys (st.hand)
+        let cIdList = MultiSet.toList (st.hand)
         assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
         
 (*
