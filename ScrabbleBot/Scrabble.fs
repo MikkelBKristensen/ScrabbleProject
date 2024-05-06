@@ -209,43 +209,67 @@ module FindMove =
         let rec tryAssembleWord (cIdList : uint32 list) (hand : MultiSet.MultiSet<uint32>) (dict : Dictionary.Dict) (word : (uint32 * (char * int) list)) =
             match cIdList with
             | [] -> List.Empty
-            | head :: tail ->
+            | head :: tail -> list.Empty
+        
 
         (*
             words stores vertical and horizontal words related to a tile, the boolean if false indicates
             that we should try the horizontal word, while if it is true we try the vertical
         *)
         let rec investigateWordsFromCoord (words : bool *(string * string)) (coord : coord) (playedTiles : list<coord * (uint32 * (char * int))>)  =
-   
             //Missing way to iterate coords
             
             match words with
-            | (false, (hor, vert)) -> // Explore the horisontal word
+            | (false, (hor, vert)) -> // Explore the horizontal word
                 let startChar = Map.find coord
                 let cIdList = MultiSet.keys (st.hand)
                 
                 if hor = null then //Null indicates empty word
-                    newWord = tryAssembleWord cIdList st.hand st.dict startChar // if this is empty then we advance our tries
-                    
+                    let newWord = tryAssembleWord cIdList st.hand st.dict startChar // if this is empty then we advance our tries
                     if List.isEmpty newWord then
-                        investigateWordsFromCoord (true, findWordFromTile coord) coord playedTiles
+                        investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
                         //return word, Without head because head is already placed on board
                         removeHead newWord
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
-                    tryAssembleWord cIdList st.hand st.dict hor
-                    
-                
+                    let newWord = tryAssembleWord cIdList st.hand st.dict hor
+                    if List.isEmpty newWord then
+                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
+                        let newCoord = (0,0)
+                        investigateWordsFromCoord (true, (findWordFromTile playedTiles newCoord)) newCoord playedTiles
+                    else
+                        //remove placed prefix
+                        //return newWord
+                        return newWord
+                        
             | (true, (hor, vert)) -> //Explore the vertical word
                 let startChar = Map.find coord
-                let cidList = multiset.keys (st.hand)
+                let cIdList = MultiSet.keys (st.hand)
                 
                 if vert = null then
-                    newWord = tryAssembleWord cIdList st.hand st.dict startChar
+                    let newWord = tryAssembleWord cIdList st.hand st.dict startChar
                     if List.isEmpty newWord then
+                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
+                        let newCoord = (0,0)
+                        investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord)newCoord playedTiles
+                    else
+                        removeHead newWord
+                else
+                    //Convert string to suitable list, before giving it to tryAssembleWord
+                    let newWord = tryAssembleWord cIdList st.hand st.dict vert
+                    
+                    if List.isEmpty newWord then
+                       //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
+                        let newCoord = (0,0)
+                        investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord playedTiles
+                    else
+                        //remove placed prefix
+                        //return newWord
+                        return newWord  
+        
                         
-        investigateWordsFromCoord (false, findWordFromTile coord) (0,0) st.playedTiles
+        investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) st.playedTiles
                 
                
                 
