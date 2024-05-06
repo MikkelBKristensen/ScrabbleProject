@@ -303,12 +303,11 @@ module Scrabble =
             Print.printHand pieces (State.hand st)
 
             // remove the force print when you move on from manual input (or when you have learnt the format)
-            forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
-            forcePrint $"Playerturn {State.playersTurn st}\n"
-            forcePrint $"Playernumber {State.playerNumber st}\n"
+            debugPrint $"Playerturn {State.playersTurn st}\n"
+            debugPrint $"Playernumber {State.playerNumber st}\n"
 
             if State.playerNumber st = State.playersTurn st then
-                forcePrint "Your turn!\n"
+                debugPrint "Your turn!\n"
                 let word = FindMove.decisionStarter st // If empty word is returned, pass or swap
                 let move = word //RegEx.parseMove input
                 
@@ -319,7 +318,7 @@ module Scrabble =
                     send cstream (SMPlay move)
 
             else
-                forcePrint "Waiting for other player to play...\n"
+                debugPrint "Waiting for other player to play...\n"
 
             //debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
 
@@ -352,8 +351,10 @@ module Scrabble =
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
                 aux st'
             | RCM (CMGameOver _) -> ()
+            | RCM (CMPassed _) ->
+                aux st
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            | RGPE err -> printfn "Gameplay Error:\n%A" err; aux st
+            | RGPE err -> debugPrint "Gameplay Error:\n%A";  aux st
 
 
         aux st
