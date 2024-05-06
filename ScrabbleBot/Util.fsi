@@ -10,5 +10,6 @@ module internal LetterRip.Util
     
     module internal multisetUtil =
         val cIdToChar : uint32 -> char
+        val charToCId : char -> uint32
         val cIdToPV : uint32 -> int
         //val handToCharMultiset : MultiSet<uint32> -> MultiSet<char list>

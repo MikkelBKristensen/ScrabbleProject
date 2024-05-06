@@ -37,7 +37,7 @@ module internal LetterRip.Util
 
     module multisetUtil =
         let cIdToChar id = dictUtil.getItem dictUtil.Alpha id
-        
+        let charToCId char = uint32 (List.findIndex (fun x -> x = char) dictUtil.Alpha)
         let cIdToPV id = dictUtil.getItem dictUtil.PointValue id
 
         //Takes hand a makes 

@@ -169,7 +169,14 @@ module FindMove =
                 let coord = ((fst coord)+(fst advance), (snd coord)+(snd advance))
                 assignCoords coord advance move rest
     
-               
+    let getPrefixCharListFromString (word : string) =
+        let charList = word.ToCharArray() |> List.ofArray
+        List.foldBack (fun x acc ->
+             let charId = multisetUtil.charToCId x
+             let charValue = multisetUtil.cIdToPV charId
+             (charId, (x, charValue )) :: acc
+             ) (charList) []
+        
     let FindWordFromHand (st : State.state) =
 
         // An Idea: Pass along the parameters to next recursion in a 'state' manner. This should help backtracking.
@@ -206,7 +213,7 @@ module FindMove =
         
     let FindWordOnBoard (st : State.state) =
         //Function should create word from a prefix, possibly given via word(the parameter)
-        let rec tryAssembleWord (cIdList : uint32 list) (hand : MultiSet.MultiSet<uint32>) (dict : Dictionary.Dict) (word : (uint32 * (char * int) list)) =
+        let rec tryAssembleWord (cIdList : uint32 list) (hand : MultiSet.MultiSet<uint32>) (dict : Dictionary.Dict) (word : list<(uint32 * (char * int))>) =
             match cIdList with
             | [] -> List.Empty
             | head :: tail -> list.Empty
@@ -218,22 +225,24 @@ module FindMove =
         *)
         let rec investigateWordsFromCoord (words : bool *(string * string)) (coord : coord) (playedTiles : list<coord * (uint32 * (char * int))>)  =
             //Missing way to iterate coords
-            
+            let mappedTiles = Map.ofList playedTiles
             match words with
-            | (false, (hor, vert)) -> // Explore the horizontal word
-                let startChar = Map.find coord
+            | (false, (hor, _)) -> // Explore the horizontal word
+                let startChar = Map.find coord mappedTiles
                 let cIdList = MultiSet.keys (st.hand)
                 
                 if hor = null then //Null indicates empty word
-                    let newWord = tryAssembleWord cIdList st.hand st.dict startChar // if this is empty then we advance our tries
+                    let newWord = tryAssembleWord cIdList st.hand st.dict [startChar] // if this is empty then we advance our tries
                     if List.isEmpty newWord then
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
                         //return word, Without head because head is already placed on board
                         removeHead newWord
                 else
-                    //Convert string to suitable list, before giving it to tryAssembleWord
-                    let newWord = tryAssembleWord cIdList st.hand st.dict hor
+                    //Convert string to uint32 * (char * int) list, before assembling word
+                    let prefixCharList = getPrefixCharListFromString hor
+                    let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
+                    
                     if List.isEmpty newWord then
                         //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
                         let newCoord = (0,0)
@@ -241,14 +250,14 @@ module FindMove =
                     else
                         //remove placed prefix
                         //return newWord
-                        return newWord
+                        newWord
                         
-            | (true, (hor, vert)) -> //Explore the vertical word
-                let startChar = Map.find coord
+            | (true, (_, vert)) -> //Explore the vertical word
+                let startChar = Map.find coord mappedTiles
                 let cIdList = MultiSet.keys (st.hand)
                 
                 if vert = null then
-                    let newWord = tryAssembleWord cIdList st.hand st.dict startChar
+                    let newWord = tryAssembleWord cIdList st.hand st.dict [startChar]
                     if List.isEmpty newWord then
                         //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
                         let newCoord = (0,0)
@@ -257,7 +266,8 @@ module FindMove =
                         removeHead newWord
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
-                    let newWord = tryAssembleWord cIdList st.hand st.dict vert
+                    let prefixCharList = getPrefixCharListFromString vert
+                    let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
                     
                     if List.isEmpty newWord then
                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
@@ -266,15 +276,11 @@ module FindMove =
                     else
                         //remove placed prefix
                         //return newWord
-                        return newWord  
+                        newWord  
         
                         
         investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) st.playedTiles
-                
-               
-                
-            
-        
+
         //let word :(uint32 * (char * int)) list = [] //find word from methods
         
         //Try to build word from it
