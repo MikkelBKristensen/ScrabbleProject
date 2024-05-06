@@ -176,6 +176,13 @@ module FindMove =
              let charValue = multisetUtil.cIdToPV charId
              (charId, (x, charValue )) :: acc
              ) (charList) []
+   
+    let rec removePrefixChars (prefix:list<uint32 * (char * int)> ) (word : list<uint32 * (char * int)>) =
+        match prefix, word with
+        | [] , xs  ->  xs
+        | x::xs, y::ys when x = y ->
+            removePrefixChars xs ys
+        
         
     let FindWordFromHand (st : State.state) =
         
@@ -222,36 +229,33 @@ module FindMove =
             //Missing way to iterate coords
             let mappedTiles = Map.ofList playedTiles
             match words with
-            | (false, (hor, _)) -> // Explore the horizontal word
+            | (false, (horizontal, _)) -> // Explore the horizontal word
                 let startChar = Map.find coord mappedTiles
                 let cIdList = MultiSet.keys (st.hand)
                 
-                if hor = null then //Null indicates empty word
+                if horizontal = null then //Null indicates empty word
                     let newWord = tryAssembleWord cIdList st.hand st.dict [startChar] // if this is empty then we advance our tries
                     if List.isEmpty newWord then
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
-                        //return word, Without head because head is already placed on board
+                        //return word, without head because head is already placed on board
                         removeHead newWord
                 else
                     //Convert string to uint32 * (char * int) list, before assembling word
-                    let prefixCharList = getPrefixCharListFromString hor
+                    let prefixCharList = getPrefixCharListFromString horizontal
                     let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
                     
                     if List.isEmpty newWord then
-                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
-                        let newCoord = (0,0)
-                        investigateWordsFromCoord (true, (findWordFromTile playedTiles newCoord)) newCoord playedTiles
+                        investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
-                        //remove placed prefix
-                        //return newWord
-                        newWord
+                        let charsToPlay = removePrefixChars prefixCharList newWord
+                        charsToPlay
                         
-            | (true, (_, vert)) -> //Explore the vertical word
+            | (true, (_, vertical)) -> //Explore the vertical word
                 let startChar = Map.find coord mappedTiles
                 let cIdList = MultiSet.keys (st.hand)
                 
-                if vert = null then
+                if vertical = null then
                     let newWord = tryAssembleWord cIdList st.hand st.dict [startChar]
                     if List.isEmpty newWord then
                         //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
@@ -261,26 +265,22 @@ module FindMove =
                         removeHead newWord
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
-                    let prefixCharList = getPrefixCharListFromString vert
+                    let prefixCharList = getPrefixCharListFromString vertical
                     let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
                     
                     if List.isEmpty newWord then
                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
+                        
                         let newCoord = (0,0)
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord playedTiles
                     else
-                        //remove placed prefix
-                        //return newWord
-                        newWord  
+                        let charsToPlay = removePrefixChars prefixCharList newWord
+                        charsToPlay
         
                         
-        investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) st.playedTiles
+        investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) st.playedTiles 
 
         //let word :(uint32 * (char * int)) list = [] //find word from methods
-        
-        //Try to build word from it
-        
-                
     //Return
     let decisionStarter (st:State.state) =
         if st.playedTiles.IsEmpty then
