@@ -71,5 +71,5 @@ let rec findWordsWithPrefix (prefix: string) (dict: Dict) =
                 words <- traverseChildren child newPrefix words
             words
 
-        // Start traversing children from the last node representing the prefix
+        // Start traversing children from the last node of prefix
         traverseChildren lastNode prefix []
