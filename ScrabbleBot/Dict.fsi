@@ -6,6 +6,6 @@ module LetterRip.Dictionary
     val insert : string -> Dict -> Dict
     val lookup : string -> Dict -> bool
     val step : char -> Dict -> (bool * Dict) option
-    
+    val findWordsWithPrefix: string -> Dict -> string list
 
 
