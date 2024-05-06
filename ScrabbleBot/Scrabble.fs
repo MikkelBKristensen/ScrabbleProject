@@ -183,42 +183,54 @@ module FindMove =
         | x::xs, y::ys when x = y ->
             removePrefixChars xs ys
         
-        
-    let FindWordFromHand (st : State.state) =
-        
-        // Mostly works! It just finds the first word. Likely only two letters long
-        let rec assembleWord (cIdList: uint32 list) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
-            match cIdList with
-            | [] -> []
-            | head :: rest ->
-                let step = Dictionary.step (multisetUtil.cIdToChar head) dict // Perform step
-                match step with
-                | None -> // No word with head char; Try again with rest
-                    match rest with
-                    | [] -> [] // more cases
-                    | _  when head > rest.Head -> []
-                    | _ -> assembleWord (List.append rest [head]) dict word
-                | Some x -> 
-                    let newWord = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
-                    if fst x then
-                        newWord
-                    else
-                        let newNewWord = assembleWord rest (snd x) newWord
-                        match newNewWord with
-                        | [] when head > rest.Head -> []
-                        | [] -> assembleWord (List.append rest [head]) dict word
-                        | _ -> newNewWord
-                    
-                    
+    // Mostly works! It just finds the first word. Likely only two letters long
+    let rec assembleWord (cIdList: uint32 list) (dict: Dictionary.Dict) (word: list<(uint32 * (char * int))>) =
+        match cIdList with
+        | [] -> []
+        | head :: rest ->
+            let step = Dictionary.step (multisetUtil.cIdToChar head) dict // Perform step
+            match step with
+            | None -> // No word with head char; Try again with rest
+                match rest with
+                | [] -> [] // more cases
+                | _  when head > rest.Head -> []
+                | _ -> assembleWord (List.append rest [head]) dict word
+            | Some x -> 
+                let newWord = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
+                if fst x then
+                    newWord
+                else
+                    let newNewWord = assembleWord rest (snd x) newWord
+                    match newNewWord with
+                    | [] when head > rest.Head -> []
+                    | [] -> assembleWord (List.append rest [head]) dict word
+                    | _ -> newNewWord
+                        
+    let FindWordFromHand (st : State.state) =         
         let cIdList = MultiSet.toList (st.hand)
         assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
         
+    let assembleFromPrefix (cIdList: uint32 list) (dict: Dictionary.Dict) (word: list<(uint32 * (char * int))>) =
+        let rec updateDict word (updatedDict : Dictionary.Dict) =
+            match word with
+            |[] -> updatedDict
+            | head :: tail ->
+                let char = fst (snd head) 
+                let step = Dictionary.step char updatedDict
+                match step with
+                | None -> failwith "shouldn't happen"
+                | Some x -> 
+                    updateDict tail (snd x)
+                    
+        let newDict = updateDict word dict
+        assembleWord cIdList newDict []
+        
+        
+                
+                
+            
+        
     let FindWordOnBoard (st : State.state) =
-        //Function should create word from a prefix, possibly given via word(the parameter)
-        let rec tryAssembleWord (cIdList : uint32 list) (hand : MultiSet.MultiSet<uint32>) (dict : Dictionary.Dict) (word : list<(uint32 * (char * int))>) =
-            match cIdList with
-            | [] -> List.Empty
-            | head :: tail -> list.Empty
         
 
         (*
@@ -228,45 +240,45 @@ module FindMove =
         let rec investigateWordsFromCoord (words : bool *(string * string)) (coord : coord) (playedTiles : list<coord * (uint32 * (char * int))>)  =
             //Missing way to iterate coords
             let mappedTiles = Map.ofList playedTiles
+            
             match words with
             | (false, (horizontal, _)) -> // Explore the horizontal word
                 let startChar = Map.find coord mappedTiles
-                let cIdList = MultiSet.keys (st.hand)
+                let cIdList = MultiSet.toList (st.hand)
                 
                 if horizontal = null then //Null indicates empty word
-                    let newWord = tryAssembleWord cIdList st.hand st.dict [startChar] // if this is empty then we advance our tries
+                    let newWord = assembleFromPrefix cIdList st.dict [startChar] // if this is empty then we advance our tries
                     if List.isEmpty newWord then
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
                         //return word, without head because head is already placed on board
-                        removeHead newWord
+                        newWord
                 else
                     //Convert string to uint32 * (char * int) list, before assembling word
                     let prefixCharList = getPrefixCharListFromString horizontal
-                    let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
+                    let newWord = assembleFromPrefix cIdList st.dict prefixCharList
                     
                     if List.isEmpty newWord then
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord playedTiles
                     else
-                        let charsToPlay = removePrefixChars prefixCharList newWord
-                        charsToPlay
+                       newWord
                         
             | (true, (_, vertical)) -> //Explore the vertical word
                 let startChar = Map.find coord mappedTiles
-                let cIdList = MultiSet.keys (st.hand)
+                let cIdList = MultiSet.toList (st.hand)
                 
                 if vertical = null then
-                    let newWord = tryAssembleWord cIdList st.hand st.dict [startChar]
+                    let newWord = assembleFromPrefix cIdList st.dict [startChar]
                     if List.isEmpty newWord then
                         //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
                         let newCoord = (0,0)
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord)newCoord playedTiles
                     else
-                        removeHead newWord
+                        newWord
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
                     let prefixCharList = getPrefixCharListFromString vertical
-                    let newWord = tryAssembleWord cIdList st.hand st.dict prefixCharList
+                    let newWord = assembleFromPrefix cIdList st.dict prefixCharList
                     
                     if List.isEmpty newWord then
                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
@@ -274,8 +286,8 @@ module FindMove =
                         let newCoord = (0,0)
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord playedTiles
                     else
-                        let charsToPlay = removePrefixChars prefixCharList newWord
-                        charsToPlay
+                        newWord
+                    
         
                         
         investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) st.playedTiles 
