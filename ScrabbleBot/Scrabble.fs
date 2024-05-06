@@ -178,38 +178,33 @@ module FindMove =
              ) (charList) []
         
     let FindWordFromHand (st : State.state) =
-
-        // An Idea: Pass along the parameters to next recursion in a 'state' manner. This should help backtracking.
-        let rec tryAssembleWord (permCIdList: uint32 list) (cIdList: uint32 list) (hand: MultiSet.MultiSet<uint32>) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
+        
+        // Mostly works! It just finds the first word. Likely only two letters long
+        let rec assembleWord (cIdList: uint32 list) (dict: Dictionary.Dict) (word: (uint32 *(char * int)) list) =
             match cIdList with
-            | [] -> List.Empty //When calling method and this is the result, we either swap or pass
+            | [] -> []
             | head :: rest ->
                 let step = Dictionary.step (multisetUtil.cIdToChar head) dict // Perform step
                 match step with
                 | None -> // No word with head char; Try again with rest
-                    match tryAssembleWord permCIdList rest hand dict word with
-                    | [] ->
-                        if word.IsEmpty then
-                            match permCIdList with
-                            | h :: t ->
-                                if head < h then
-                                    tryAssembleWord (List.append t [h]) (List.append t [h]) st.hand dict []
-                                else
-                                    List.Empty
-                        else
-                            tryAssembleWord permCIdList (List.append rest [head]) hand dict (removeTail word) // Retry with the rest of the list and clear the current word
-                    | result -> result // Return the result obtained from the recursive call
-                | Some x ->
-                    let word = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
-                    if fst x then // Indicates a finished word; Hand doesn't need updating internally
-                        word
+                    match rest with
+                    | [] -> [] // more cases
+                    | _  when head > rest.Head -> []
+                    | _ -> assembleWord (List.append rest [head]) dict word
+                | Some x -> 
+                    let newWord = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
+                    if fst x then
+                        newWord
                     else
-                        let hand = MultiSet.removeSingle head hand // Removes tile from hand
-                        let cIdList = MultiSet.keys (hand) // Updates cIdList
-                        tryAssembleWord permCIdList cIdList hand (snd x) word // Recursive call
-                
-        let cIdList = MultiSet.keys (st.hand)
-        tryAssembleWord cIdList cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
+                        let newNewWord = assembleWord rest (snd x) newWord
+                        match newNewWord with
+                        | [] when head > rest.Head -> []
+                        | [] -> assembleWord (List.append rest [head]) dict word
+                        | _ -> newNewWord
+                    
+                    
+        let cIdList = MultiSet.toList (st.hand)
+        assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
         
     let FindWordOnBoard (st : State.state) =
         //Function should create word from a prefix, possibly given via word(the parameter)
