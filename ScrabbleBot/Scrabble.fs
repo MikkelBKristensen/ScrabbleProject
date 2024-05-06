@@ -156,6 +156,11 @@ module FindMove =
             | [] -> []
             | [_] -> [] // If there's only one element, return an empty list
             | head :: tail -> head :: removeTail tail
+    let rec removeHead list =
+        match list with
+        | [] -> []
+        | [_] -> []
+        | _ :: tail -> tail
     let rec assignCoords (coord: (int * int)) (advance: (int * int)) (move: ((int * int) * (uint32 * (char * int))) list) (word: (uint32 *(char * int)) list) =
             match word with
             | [] -> move // return empty word for passing/swapping
@@ -198,18 +203,58 @@ module FindMove =
                 
         let cIdList = MultiSet.keys (st.hand)
         tryAssembleWord cIdList cIdList st.hand st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
-    
-     
-    let FindWordOnBoard (st : State.state) =
-        // find word from board
-        let wordslist = Map.toList st.wordList
-        let word :(uint32 * (char * int)) list = [] //find word from methods
         
-        //Try to build word from it
-        let rec tryAssembleWord hand dict word wordslist =
-            match wordslist with
+    let FindWordOnBoard (st : State.state) =
+        //Function should create word from a prefix, possibly given via word(the parameter)
+        let rec tryAssembleWord (cIdList : uint32 list) (hand : MultiSet.MultiSet<uint32>) (dict : Dictionary.Dict) (word : (uint32 * (char * int) list)) =
+            match cIdList with
             | [] -> List.Empty
             | head :: tail ->
+
+        (*
+            words stores vertical and horizontal words related to a tile, the boolean if false indicates
+            that we should try the horizontal word, while if it is true we try the vertical
+        *)
+        let rec investigateWordsFromCoord (words : bool *(string * string)) (coord : coord) (playedTiles : list<coord * (uint32 * (char * int))>)  =
+   
+            //Missing way to iterate coords
+            
+            match words with
+            | (false, (hor, vert)) -> // Explore the horisontal word
+                let startChar = Map.find coord
+                let cIdList = MultiSet.keys (st.hand)
+                
+                if hor = null then //Null indicates empty word
+                    newWord = tryAssembleWord cIdList st.hand st.dict startChar // if this is empty then we advance our tries
+                    
+                    if List.isEmpty newWord then
+                        investigateWordsFromCoord (true, findWordFromTile coord) coord playedTiles
+                    else
+                        //return word, Without head because head is already placed on board
+                        removeHead newWord
+                else
+                    //Convert string to suitable list, before giving it to tryAssembleWord
+                    tryAssembleWord cIdList st.hand st.dict hor
+                    
+                
+            | (true, (hor, vert)) -> //Explore the vertical word
+                let startChar = Map.find coord
+                let cidList = multiset.keys (st.hand)
+                
+                if vert = null then
+                    newWord = tryAssembleWord cIdList st.hand st.dict startChar
+                    if List.isEmpty newWord then
+                        
+        investigateWordsFromCoord (false, findWordFromTile coord) (0,0) st.playedTiles
+                
+               
+                
+            
+        
+        //let word :(uint32 * (char * int)) list = [] //find word from methods
+        
+        //Try to build word from it
+        
                 
     //Return
     let decisionStarter (st:State.state) =
