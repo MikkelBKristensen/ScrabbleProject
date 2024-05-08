@@ -323,7 +323,6 @@ module Scrabble =
                 
                 if List.isEmpty move then
                     //Change tiles to use tilefinder logic
-                    tilesToBeSwapped = MultiSet.toList (State.hand st)
                     send cstream (SMChange tilesToBeSwapped)
                     //Missing logic to abort swap and pass instead
                     //send cstream (SMPass)
