@@ -365,9 +365,7 @@ module Scrabble =
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM (CMChangeSuccess( newTiles) ) ->
-                //Update hand by removing tilesToBeSwapped
-                //Update hand by adding newTiles
-                let newHand = MultiSet.empty 
+                let newHand = State.updateHandNoCoords st.hand tilesToBeSwapped newTiles
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
                 aux st'
             
