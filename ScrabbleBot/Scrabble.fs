@@ -235,7 +235,7 @@ module FindMove =
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord (0,1) playedTiles uncheckedTiles
                     else
                         
-                        let startCoord = (fst coord  + fst direction * horizontal.Length, snd coord + snd direction)
+                        let startCoord = (fst coord  + fst direction, snd coord + snd direction)
                         //return word, without head because head is already placed on board
                         (newWord, startCoord,  direction)
                 else
@@ -261,7 +261,7 @@ module FindMove =
                         let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
-                        let startCoord = (fst coord  + fst direction, snd coord + snd direction * vertical.Length)
+                        let startCoord = (fst coord  + fst direction, snd coord + snd direction)
                         (newWord, startCoord,  direction)
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
