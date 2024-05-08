@@ -78,6 +78,9 @@ module State =
     let removeUsedPieces (hand : MultiSet.MultiSet<uint32>) (ms : (coord * (uint32 * (char * int))) list) =
         List.fold (fun acc x -> MultiSet.removeSingle (fst (snd x)) acc) hand ms
 
+    let removeUsedPiecesNoCoords (hand : MultiSet.MultiSet<uint32>) (ms : (uint32 * (char * int)) list) =
+        List.fold (fun acc x -> MultiSet.removeSingle (fst x) acc) hand ms
+
     // Adds the new pieces to the hand
     let addNewPieces (newPieces : (uint32 * uint32) list) (hand : MultiSet.MultiSet<uint32>) =
         List.fold (fun acc x -> MultiSet.addSingle (fst x) acc) hand newPieces
@@ -87,6 +90,10 @@ module State =
         // First remove the used pieces, then add the new ones to updated hand
         removeUsedPieces hand ms |> addNewPieces newPieces
     
+    let updateHandNoCoords (hand : MultiSet.MultiSet<uint32>) (ms: (uint32 * (char * int)) list) (newPieces : (uint32 * uint32) list) =
+        // First remove the used pieces, then add the new ones to updated hand
+        removeUsedPiecesNoCoords hand ms |> addNewPieces newPieces
+        
     let updatePlayedLetters (PL : list<coord * (uint32 * (char * int))>)  (ms : (coord * (uint32 * (char * int))) list) : list<coord * (uint32 * (char * int))> =
         List.fold (fun acc x -> List.append acc [x]) PL ms
         
