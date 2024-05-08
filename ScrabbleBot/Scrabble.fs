@@ -213,7 +213,7 @@ module FindMove =
                         
     let FindWordFromHand (st : State.state) =         
         let cIdList = MultiSet.toList (st.hand)
-        assembleWord cIdList st.dict List.Empty |> assignCoords (-1,0) (1,0) List.Empty
+        assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
         
     let assembleFromPrefix (cIdList: uint32 list) (dict: Dictionary.Dict) (word: list<(uint32 * (char * int))>) =
         let rec updateDict word (updatedDict : Dictionary.Dict) =
@@ -229,6 +229,33 @@ module FindMove =
                     
         let newDict = updateDict word dict
         assembleWord cIdList newDict []
+    
+    (* 
+       Checks each tile of a word, and returns of the list that are not valid
+       Meaning if the list is empty, the word is a valid play
+    *)
+    let checkTiles (word : list<((int*int)*(uint32 * (char * int)))>) (playedTiles : list<coord * (uint32 * (char * int))>) (direction : coord) (dict : Dictionary.Dict) =
+       let boardWithWord = playedTiles @ word
+       match direction with
+       | (1,0) -> //Horizontal word, check vertical
+           List.foldBack (fun (coordinates, tile) acc ->
+                        let verticalWord = snd (findWordFromTile boardWithWord coordinates)
+                        if verticalWord= null || Dictionary.lookup verticalWord dict then
+                            acc
+                         else
+                            List.append acc [verticalWord]
+                          ) word List.Empty
+           
+       | (0,1) -> //Vertical word, check horizontal
+            List.foldBack (fun (coordinates, tile) acc ->
+                        let horizontalWord = fst (findWordFromTile boardWithWord coordinates)
+                        if   horizontalWord= null || Dictionary.lookup horizontalWord dict then
+                            acc
+                         else
+                            List.append acc [horizontalWord]
+                          ) word List.Empty
+       
+       
   
     let FindWordOnBoard (st : State.state) =
         (*
@@ -248,9 +275,19 @@ module FindMove =
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord (0,1) playedTiles uncheckedTiles
                     else
                         
-                        let startCoord = (fst coord  + fst direction, snd coord + snd direction)
+                        let startCoord = (fst coord + fst direction, snd coord + snd direction)
                         //return word, without head because head is already placed on board
-                        (newWord, startCoord,  direction)
+                        
+                        //assign coords and check if all tiles create valid words else - progress with new try
+                        let wordWithCoords = assignCoords startCoord direction List.Empty newWord  
+                        let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
+                        if invalidWords.Length = 0 then
+                            wordWithCoords
+                        else
+                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                        
                 else
                     //Convert string to uint32 * (char * int) list, before assembling word
                     let prefixCharList = getPrefixCharListFromString horizontal
@@ -260,7 +297,15 @@ module FindMove =
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord (0,1) playedTiles uncheckedTiles
                     else
                        let startCoord = (fst coord  + fst direction * horizontal.Length, snd coord + snd direction)
-                       (newWord, startCoord ,  direction)
+                       let wordWithCoords = assignCoords  startCoord direction List.Empty newWord  
+                       let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
+                       if invalidWords.Length = 0 then
+                            wordWithCoords
+                       else
+                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                       
                         
             | (true, (_, vertical)) -> //Explore the vertical word
                 let startChar = Map.find coord uncheckedTiles
@@ -275,7 +320,16 @@ module FindMove =
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
                         let startCoord = (fst coord  + fst direction, snd coord + snd direction)
-                        (newWord, startCoord,  direction)
+                        //assign coords and check if all tiles create valid words else - progress with new try
+                        let wordWithCoords = assignCoords  startCoord direction List.Empty newWord  
+                        let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
+                        if invalidWords.Length = 0 then
+                            wordWithCoords
+                        else
+                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                        
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
                     let prefixCharList = getPrefixCharListFromString vertical
@@ -290,12 +344,23 @@ module FindMove =
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
                         let startCoord = (fst coord  + fst direction, snd coord + snd direction * vertical.Length)
-                        (newWord, startCoord, direction)
+                        //assign coords and check if all tiles create valid words else - progress with new try
+                        let wordWithCoords = assignCoords  startCoord direction List.Empty newWord  
+                        let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
+                        if invalidWords.Length = 0 then
+                            wordWithCoords
+                        else
+                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                         
-        let unrefinedword = investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) (1,0) st.playedTiles (Map.ofList st.playedTiles)
+                        
+                        
+        let word = investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) (1,0) st.playedTiles (Map.ofList st.playedTiles)
+        word
         
-        match unrefinedword with
-        | (charlist, coord, direction) -> assignCoords coord direction List.empty charlist
+       
+                
         
         //After assigning coords, but before returning word - check for neighbours
         
