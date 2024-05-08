@@ -97,6 +97,12 @@ module State =
     let updatePlayedLetters (PL : list<coord * (uint32 * (char * int))>)  (ms : (coord * (uint32 * (char * int))) list) : list<coord * (uint32 * (char * int))> =
         List.fold (fun acc x -> List.append acc [x]) PL ms
         
+    let findPiecesToSwap (hand : MultiSet.MultiSet<uint32>) : uint32 list =
+        // Find duplicates in hand
+        let duplicates = MultiSet.fold (fun acc x i -> if i > 1u then x :: acc else acc) [] hand
+        
+        // if duplicates is less than 3 or more, return the duplicates, else return first 3 elements of hand
+        if List.length duplicates < 3 then duplicates else MultiSet.toList hand |> List.take 3
 
     let board st            = st.board
     let dict st             = st.dict
