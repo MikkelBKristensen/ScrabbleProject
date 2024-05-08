@@ -305,6 +305,8 @@ module Scrabble =
             // remove the force print when you move on from manual input (or when you have learnt the format)
             debugPrint $"Playerturn {State.playersTurn st}\n"
             debugPrint $"Playernumber {State.playerNumber st}\n"
+            
+            let tilesToBeSwapped = List.empty
 
             if State.playerNumber st = State.playersTurn st then
                 debugPrint "Your turn!\n"
@@ -312,8 +314,11 @@ module Scrabble =
                 let move = word //RegEx.parseMove input
                 
                 
-                if List.isEmpty move then 
-                    send cstream (SMPass)
+                if List.isEmpty move then
+                    tilesToBeSwapped = MultiSet.toList (State.hand st)
+                    
+                    //Missing logic to abort swap and pass instead
+                    //send cstream (SMPass)
                 else
                     send cstream (SMPlay move)
 
@@ -351,6 +356,14 @@ module Scrabble =
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
                 aux st'
             | RCM (CMGameOver _) -> ()
+            | RCM (CMChangeSuccess( newTiles) ) ->
+                //Update hand by removing tilesToBeSwapped
+                //Update hand by adding newTiles
+                let newHand = MultiSet.empty 
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
+                aux st'
+            
+                
             | RCM (CMPassed _) ->
                 aux st
             | RCM a -> failwith (sprintf "not implmented: %A" a)
