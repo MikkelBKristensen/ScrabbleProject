@@ -200,7 +200,7 @@ module FindMove =
                         
     let FindWordFromHand (st : State.state) =         
         let cIdList = MultiSet.toList (st.hand)
-        assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
+        assembleWord cIdList st.dict List.Empty |> assignCoords (-1,0) (1,0) List.Empty
         
     let assembleFromPrefix (cIdList: uint32 list) (dict: Dictionary.Dict) (word: list<(uint32 * (char * int))>) =
         let rec updateDict word (updatedDict : Dictionary.Dict) =
@@ -283,10 +283,10 @@ module FindMove =
         
         match unrefinedword with
         | (charlist, coord, direction) -> assignCoords coord direction List.empty charlist
+        
         //After assigning coords, but before returning word - check for neighbours
-
-        //let word :(uint32 * (char * int)) list = [] //find word from methods
-    //Return
+        
+        
     let decisionStarter (st:State.state) =
         if st.playedTiles.IsEmpty then
             FindWordFromHand st
