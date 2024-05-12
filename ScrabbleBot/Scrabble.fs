@@ -277,7 +277,7 @@ module FindMove =
                         let verticalWord = snd placedWords
                         let horizontalWord = fst placedWords
                         
-                        if verticalWord = null || Dictionary.lookup verticalWord dict && Dictionary.lookup horizontalWord dict then
+                        if (verticalWord = null || Dictionary.lookup verticalWord dict) && Dictionary.lookup horizontalWord dict then
                             acc
                          else
                             List.append acc [verticalWord]
@@ -289,7 +289,7 @@ module FindMove =
                         let verticalWord = snd placedWords
                         let horizontalWord = fst placedWords
                         
-                        if   horizontalWord = null || Dictionary.lookup horizontalWord dict && Dictionary.lookup verticalWord dict then
+                        if (horizontalWord = null || Dictionary.lookup horizontalWord dict) && Dictionary.lookup verticalWord dict then
                             acc
                          else
                             List.append acc [horizontalWord]
