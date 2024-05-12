@@ -1,6 +1,7 @@
 ﻿namespace LetterRip
 
 open System
+open System.Diagnostics
 open MultiSet
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
@@ -101,8 +102,15 @@ module State =
         // Find duplicates in hand
         let duplicates = MultiSet.fold (fun acc x i -> if i > 1u then x :: acc else acc) [] hand
         
-        // if duplicates is less than 3 or more, return the duplicates, else return first 3 elements of hand
-        if List.length duplicates < 3 then duplicates else MultiSet.toList hand |> List.take 3
+        // if duplicates is less than or equal to 3, return the duplicates, else return first 3 elements of hand
+        // Create switch for different cases of duplicates length
+        match duplicates.Length with
+        | 0 -> MultiSet.toList hand |> List.take 3
+        | 1 -> duplicates @ MultiSet.toList hand |> List.take 2
+        | 2 -> duplicates @ MultiSet.toList hand |> List.take 1
+        | 3 -> duplicates
+        | _ -> duplicates |> List.take 3
+            
 
     let board st            = st.board
     let dict st             = st.dict

@@ -84,6 +84,7 @@ module internal MultiSet
             Map.foldBack func map acc
     
     let ofList (ls : 'a list) : MultiSet<'a> = List.fold (fun acc item -> addSingle item acc) empty ls
+    
     let toList (set : MultiSet<'a>) : 'a list =
         foldBack (fun item count acc ->
         List.init (int count) (fun _ -> item) @ acc
