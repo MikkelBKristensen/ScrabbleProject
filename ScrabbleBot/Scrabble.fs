@@ -272,30 +272,24 @@ module FindMove =
        
        match direction with
        | (1,0) -> //Horizontal word, check vertical
-           List.foldBack (fun (coordinates, tile) acc ->
+           List.foldBack (fun (coordinates, _) acc ->
                         let placedWords = findWordFromTile boardWithWord coordinates
                         let verticalWord = snd placedWords
                         let horizontalWord = fst placedWords
                         
-                        forcePrint $"\n{verticalWord}\n"
-                        forcePrint $"{horizontalWord}\n"
-                        
-                        if verticalWord= null || Dictionary.lookup verticalWord dict && (horizontalWord = null || Dictionary.lookup horizontalWord dict) then
+                        if verticalWord = null || Dictionary.lookup verticalWord dict && Dictionary.lookup horizontalWord dict then
                             acc
                          else
                             List.append acc [verticalWord]
                           ) word List.Empty
            
        | (0,1) -> //Vertical word, check horizontal
-            List.foldBack (fun (coordinates, tile) acc ->
+            List.foldBack (fun (coordinates, _) acc ->
                         let placedWords = findWordFromTile boardWithWord coordinates
                         let verticalWord = snd placedWords
                         let horizontalWord = fst placedWords
                         
-                        forcePrint $"\n{verticalWord}\n"
-                        forcePrint $"{horizontalWord}\n"
-                        
-                        if   horizontalWord= null || Dictionary.lookup horizontalWord dict && (verticalWord = null || Dictionary.lookup verticalWord dict) then
+                        if   horizontalWord = null || Dictionary.lookup horizontalWord dict && Dictionary.lookup verticalWord dict then
                             acc
                          else
                             List.append acc [horizontalWord]
