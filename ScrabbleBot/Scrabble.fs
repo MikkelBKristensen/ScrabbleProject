@@ -78,8 +78,8 @@ module State =
     let removeUsedPieces (hand : MultiSet.MultiSet<uint32>) (ms : (coord * (uint32 * (char * int))) list) =
         List.fold (fun acc x -> MultiSet.removeSingle (fst (snd x)) acc) hand ms
 
-    let removeUsedPiecesNoCoords (hand : MultiSet.MultiSet<uint32>) (ms : (uint32 * (char * int)) list) =
-        List.fold (fun acc x -> MultiSet.removeSingle (fst x) acc) hand ms
+    let removeUsedPiecesNoCoords (hand : MultiSet.MultiSet<uint32>) (ms : uint32 list) =
+        List.fold (fun acc x -> MultiSet.removeSingle x acc) hand ms
 
     // Adds the new pieces to the hand
     let addNewPieces (newPieces : (uint32 * uint32) list) (hand : MultiSet.MultiSet<uint32>) =
@@ -90,7 +90,7 @@ module State =
         // First remove the used pieces, then add the new ones to updated hand
         removeUsedPieces hand ms |> addNewPieces newPieces
     
-    let updateHandNoCoords (hand : MultiSet.MultiSet<uint32>) (ms: (uint32 * (char * int)) list) (newPieces : (uint32 * uint32) list) =
+    let updateHandNoCoords (hand : MultiSet.MultiSet<uint32>) (ms: uint32 list) (newPieces : (uint32 * uint32) list) =
         // First remove the used pieces, then add the new ones to updated hand
         removeUsedPiecesNoCoords hand ms |> addNewPieces newPieces
         
@@ -250,13 +250,29 @@ module FindMove =
        Checks each tile of a word, and returns of the list that are not valid
        Meaning if the list is empty, the word is a valid play
     *)
+    
+    let findDuplicates list1 list2 =
+        let duplicates = List.filter (fun (x, _) -> List.exists (fun (y, _) -> x = y) list2) list1
+        not duplicates.IsEmpty
+    
     let checkTiles (word : list<((int*int)*(uint32 * (char * int)))>) (playedTiles : list<coord * (uint32 * (char * int))>) (direction : coord) (dict : Dictionary.Dict) =
        let boardWithWord = playedTiles @ word
+        
+       if findDuplicates word playedTiles then
+            ["duplicates found"]
+       else
+       
        match direction with
        | (1,0) -> //Horizontal word, check vertical
            List.foldBack (fun (coordinates, tile) acc ->
-                        let verticalWord = snd (findWordFromTile boardWithWord coordinates)
-                        if verticalWord = null || Dictionary.lookup verticalWord dict then
+                        let placedWords = findWordFromTile boardWithWord coordinates
+                        let verticalWord = snd placedWords
+                        let horizontalWord = fst placedWords
+                        
+                        forcePrint $"\n{verticalWord}\n"
+                        forcePrint $"{horizontalWord}\n"
+                        
+                        if verticalWord= null || Dictionary.lookup verticalWord dict && (horizontalWord = null || Dictionary.lookup horizontalWord dict) then
                             acc
                          else
                             List.append acc [verticalWord]
@@ -264,8 +280,14 @@ module FindMove =
            
        | (0,1) -> //Vertical word, check horizontal
             List.foldBack (fun (coordinates, tile) acc ->
-                        let horizontalWord = fst (findWordFromTile boardWithWord coordinates)
-                        if   horizontalWord= null || Dictionary.lookup horizontalWord dict then
+                        let placedWords = findWordFromTile boardWithWord coordinates
+                        let verticalWord = snd placedWords
+                        let horizontalWord = fst placedWords
+                        
+                        forcePrint $"\n{verticalWord}\n"
+                        forcePrint $"{horizontalWord}\n"
+                        
+                        if   horizontalWord= null || Dictionary.lookup horizontalWord dict && (verticalWord = null || Dictionary.lookup verticalWord dict) then
                             acc
                          else
                             List.append acc [horizontalWord]
@@ -337,8 +359,11 @@ module FindMove =
                     if List.isEmpty newWord then
                         //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
                         let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                        let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                        investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                        if updateUncheckedTiles.IsEmpty then
+                            []
+                        else
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
                         let startCoord = (fst coord  + fst direction, snd coord + snd direction)
                         //assign coords and check if all tiles create valid words else - progress with new try
@@ -348,8 +373,11 @@ module FindMove =
                             wordWithCoords
                         else
                             let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                            if updateUncheckedTiles.IsEmpty then
+                                []
+                            else
+                                let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                                investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                         
                 else
                     //Convert string to suitable list, before giving it to tryAssembleWord
@@ -360,9 +388,11 @@ module FindMove =
                        //Advance with newCoord (but we need to find som logic to find out exactly what coords that should be)
                         
                         let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                        //Map.minKeyValue WILL throw an error if the map is empty
-                        let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                        investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                        if updateUncheckedTiles.IsEmpty then
+                            []
+                        else 
+                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
                         //Take account that we dont know the true start coordinate of the word at this point
                         
@@ -378,8 +408,11 @@ module FindMove =
                             wordWithCoords
                         else
                             let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                            if updateUncheckedTiles.IsEmpty then
+                                []
+                            else 
+                                let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                                investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                         
                         
                         
@@ -407,7 +440,7 @@ module Scrabble =
             debugPrint $"Playerturn {State.playersTurn st}\n"
             debugPrint $"Playernumber {State.playerNumber st}\n"
             
-            let tilesToBeSwapped = List.empty
+            let tilesToBeSwapped = State.findPiecesToSwap st.hand
 
             if State.playerNumber st = State.playersTurn st then
                 debugPrint "Your turn!\n"
