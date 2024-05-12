@@ -230,10 +230,13 @@ module FindMove =
                     newWord
                 else
                     let newNewWord = assembleWord rest (snd x) newWord
-                    match newNewWord with
-                    | [] when head > rest.Head -> []
-                    | [] -> assembleWord (List.append rest [head]) dict word
-                    | _ -> newNewWord
+                    if rest.IsEmpty then
+                        []
+                    else
+                        match newNewWord with
+                        | [] when head > rest.Head -> []
+                        | [] -> assembleWord (List.append rest [head]) dict word
+                        | _ -> newNewWord
                         
     let FindWordFromHand (st : State.state) =         
         let cIdList = MultiSet.toList (st.hand)
@@ -492,7 +495,8 @@ module Scrabble =
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
                 aux st'
-            | RCM (CMGameOver _) -> ()
+            | RCM (CMGameOver finalScore) ->
+                List.iter (fun (x, y) -> debugPrint $"{x}, {y}\n") finalScore
             | RCM (CMChangeSuccess( newTiles) ) ->
                 let newHand = State.updateHandNoCoords st.hand tilesToBeSwapped newTiles
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
@@ -500,6 +504,7 @@ module Scrabble =
             
                 
             | RCM (CMPassed _) ->
+                let st = st
                 aux st
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err -> debugPrint "Gameplay Error:\n%A";  aux st
