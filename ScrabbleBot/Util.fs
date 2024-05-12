@@ -26,7 +26,8 @@ module internal LetterRip.Util
          
         let Alpha = ['_';'A'; 'B'; 'C'; 'D'; 'E'; 'F'; 'G'; 'H'; 'I'; 'J'; 'K'; 'L'; 'M'; 'N'; 'O'; 'P'; 'Q'; 'R'; 'S'; 'T'; 'U'; 'V'; 'W'; 'X'; 'Y'; 'Z']
 
-        let PointValue = [0; 1; 3; 3; 2; 1; 4; 2; 4; 1; 8; 5; 1; 3; 1; 1; 3; 10; 1; 1; 1; 4; 4; 8; 4; 10]
+        let PointValue = [0; 1; 3; 3; 2; 1; 4; 2; 4; 1; 8; 5; 1; 3; 1; 1; 3; 10; 1; 1; 1; 1; 4; 4; 8; 4; 10]
+        let PointvalueDict =  PointValue |> List.zip Alpha |> Map.ofList
     
         let getItem (list: 'a list) (i : uint32) =
             let rec aux l i j =
@@ -37,8 +38,9 @@ module internal LetterRip.Util
 
     module multisetUtil =
         let cIdToChar id = dictUtil.getItem dictUtil.Alpha id
+        //let cIdToChar (id:uint32) = List.indexed dictUtil.Alpha |> List.filter (fun (i, x) -> i = int id) |> List.head |> snd
         let charToCId char = uint32 (List.findIndex (fun x -> x = char) dictUtil.Alpha)
-        let cIdToPV id = dictUtil.getItem dictUtil.PointValue id
+        let cIdToPV id = Map.find (cIdToChar id) dictUtil.PointvalueDict 
 
         //Takes hand a makes 
         //let handToCharMultiset (set: MultiSet<uint32>) = MultiSet.map (fun x -> [cIdToChar x])

@@ -272,6 +272,7 @@ module FindMove =
                 if horizontal = null then //Null indicates empty word
                     let newWord = assembleFromPrefix cIdList st.dict [startChar] // if this is empty then we advance our tries
                     if List.isEmpty newWord then
+                        
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord (0,1) playedTiles uncheckedTiles
                     else
                         
@@ -284,9 +285,9 @@ module FindMove =
                         if invalidWords.Length = 0 then
                             wordWithCoords
                         else
-                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                            //let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            //let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (true, findWordFromTile playedTiles coord) coord (0,1) playedTiles uncheckedTiles
                         
                 else
                     //Convert string to uint32 * (char * int) list, before assembling word
@@ -302,9 +303,9 @@ module FindMove =
                        if invalidWords.Length = 0 then
                             wordWithCoords
                        else
-                            let updateUncheckedTiles = Map.remove coord uncheckedTiles
-                            let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
-                            investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
+                            //let updateUncheckedTiles = Map.remove coord uncheckedTiles
+                            //let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
+                            investigateWordsFromCoord (true, findWordFromTile playedTiles coord) coord (0,1) playedTiles uncheckedTiles
                        
                         
             | (true, (_, vertical)) -> //Explore the vertical word
@@ -357,12 +358,8 @@ module FindMove =
                         
                         
         let word = investigateWordsFromCoord (false, findWordFromTile st.playedTiles (0,0)) (0,0) (1,0) st.playedTiles (Map.ofList st.playedTiles)
+        
         word
-        
-       
-                
-        
-        //After assigning coords, but before returning word - check for neighbours
         
         
     let decisionStarter (st:State.state) =
@@ -431,6 +428,7 @@ module Scrabble =
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
+                
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
                 aux st'
             | RCM (CMGameOver _) -> ()
