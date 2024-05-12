@@ -139,7 +139,22 @@ module FindMove =
             if Array.length verticalLetters > 1 then String(verticalLetters) else null // Exclude single-letter words
 
         (getHorizontalWord (), getVerticalWord ())
-
+    let getStartCoordFromWord (word : string) (currentCoord : (int*int)) (direction : (int*int)) (playedTiles : list<(int * int) * (uint32 * (char * int))>) =
+        
+        let rec findCoordsFromWord (direction) (currentCoord) : list<(int*int)>=
+            match List.tryFind (fun (coord, _) -> coord = currentCoord) playedTiles with
+            | Some (coordinate, (_, (_, _))) ->
+                let nextTile = (fst currentCoord + fst direction, snd currentCoord + snd direction)
+                List.append [coordinate] (findCoordsFromWord direction nextTile)
+            | None -> List.empty
+        
+        let pluscoords = findCoordsFromWord direction currentCoord
+        let oppositeDirection = (-1 * (fst direction), -1 * (snd direction))
+        let minuscoords = findCoordsFromWord oppositeDirection currentCoord
+        List.append minuscoords pluscoords |> List.min 
+            
+        
+    
     let addWordIfNotEmpty (wordCoordMap: list<State.WordInfo>) (word: string) (lastLetterCoord: coord) (direction : coord) : list<State.WordInfo> =
         if word <> null then
             { Word = word; LastLetterCoord = lastLetterCoord; Direction = direction } :: wordCoordMap
@@ -149,6 +164,7 @@ module FindMove =
     let findAllWords (playedTiles: list<coord * (uint32 * (char * int))>) : list<State.WordInfo> =
         List.fold (fun acc (coord, _) ->
             let (horizontalWord, verticalWord) = findWordFromTile playedTiles coord
+            
             // Extract the last letter coordinate
             let lastLetterCoord = coord
 
@@ -240,7 +256,7 @@ module FindMove =
        | (1,0) -> //Horizontal word, check vertical
            List.foldBack (fun (coordinates, tile) acc ->
                         let verticalWord = snd (findWordFromTile boardWithWord coordinates)
-                        if verticalWord= null || Dictionary.lookup verticalWord dict then
+                        if verticalWord = null || Dictionary.lookup verticalWord dict then
                             acc
                          else
                             List.append acc [verticalWord]
@@ -297,8 +313,12 @@ module FindMove =
                     if List.isEmpty newWord then
                         investigateWordsFromCoord (true, (findWordFromTile playedTiles coord)) coord (0,1) playedTiles uncheckedTiles
                     else
-                       let startCoord = (fst coord  + fst direction * horizontal.Length, snd coord + snd direction)
-                       let wordWithCoords = assignCoords  startCoord direction List.Empty newWord  
+                       //Take account that we dont know the true start coordinate of the word at this point
+                       let startCoord =
+                            getStartCoordFromWord horizontal coord direction playedTiles
+                            
+                       let startPlacingPoint = (fst startCoord  + fst direction * horizontal.Length, snd startCoord+ snd direction)
+                       let wordWithCoords = assignCoords  startPlacingPoint direction List.Empty newWord  
                        let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
                        if invalidWords.Length = 0 then
                             wordWithCoords
@@ -344,9 +364,15 @@ module FindMove =
                         let newCoord = fst (Map.minKeyValue updateUncheckedTiles)
                         investigateWordsFromCoord (false, findWordFromTile playedTiles newCoord) newCoord (1,0) playedTiles updateUncheckedTiles
                     else
-                        let startCoord = (fst coord  + fst direction, snd coord + snd direction * vertical.Length)
+                        //Take account that we dont know the true start coordinate of the word at this point
+                        
+                        let startCoord =
+                            getStartCoordFromWord vertical coord direction playedTiles 
+                        
+                        let startPlacingPoint = (fst startCoord  + fst direction, snd startCoord + snd direction * vertical.Length)
+                        
                         //assign coords and check if all tiles create valid words else - progress with new try
-                        let wordWithCoords = assignCoords  startCoord direction List.Empty newWord  
+                        let wordWithCoords = assignCoords  startPlacingPoint direction List.Empty newWord  
                         let invalidWords = checkTiles wordWithCoords st.playedTiles direction st.dict
                         if invalidWords.Length = 0 then
                             wordWithCoords
