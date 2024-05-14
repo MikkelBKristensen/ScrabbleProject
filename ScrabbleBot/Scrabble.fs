@@ -107,18 +107,42 @@ module State =
     let incrementPassCounter mc = {mc with PassCounter = mc.PassCounter + 1u}
     let incrementFailedMoveCounter mc = {mc with FailedMoveCounter = mc.FailedMoveCounter + 1u}
         
-    let findPiecesToSwap (hand : MultiSet.MultiSet<uint32>) : uint32 list =
-        
-        let wildCards = MultiSet.toList hand |> List.filter (fun x -> x = 0u)
+    let findPiecesToSwap (hand : MultiSet.MultiSet<uint32>) (amount : uint32) : uint32 list =
+        let piecesToSwap = []
+
+        // Get all wildCards on hand
+        let wildCards = MultiSet.fold (fun acc x y -> if x = 0u then MultiSet.add x y acc else acc) MultiSet.empty hand
+        // Remove wildcards from hand
+        let hand = MultiSet.remove 0u (MultiSet.size wildCards) hand
+        // Add pieces to swap
+        let piecesToSwap = piecesToSwap @ MultiSet.toList wildCards
+
         // Find duplicates in hand
-        let duplicates = MultiSet.fold (fun acc x i -> if i > 1u then x :: acc else acc) [] hand
-        // if duplicates is less than or equal to 3, return the duplicates, else return first 3 elements of hand
-        match duplicates.Length with
-        | 0 -> MultiSet.toList hand |> List.take 3
-        | 1 -> duplicates @ MultiSet.toList hand |> List.take 2
-        | 2 -> duplicates @ MultiSet.toList hand |> List.take 1
-        | 3 -> duplicates
-        | _ -> duplicates |> List.take 3
+        let duplicates = MultiSet.fold (fun acc x y -> if y > 1u then (MultiSet.add x (y-1u) acc) else acc) MultiSet.empty hand
+        // Remove duplicates from hand
+        let hand = MultiSet.fold (fun acc x y -> MultiSet.remove x y acc) hand hand
+        // Add pieces to swap
+        let piecesToSwap = piecesToSwap @ MultiSet.toList duplicates
+
+        // If possible, take the first "amount" from piecesToSwap, else take "amount" from hand
+        match List.length piecesToSwap with
+        | 0 -> 
+            if ((MultiSet.size hand) >= amount) then
+                MultiSet.toList hand |> List.take (int amount)
+            else
+                MultiSet.toList hand
+        | x -> 
+            
+            if x >= (int amount) then
+                List.take (int amount) piecesToSwap
+            else
+                if (int (MultiSet.size hand)) >= (int amount) - (int x) then
+                    piecesToSwap @ MultiSet.toList hand |> List.take ((int amount) - x)
+                else 
+                    piecesToSwap @ MultiSet.toList hand 
+            
+        
+
             
 
     let board st            = st.board
