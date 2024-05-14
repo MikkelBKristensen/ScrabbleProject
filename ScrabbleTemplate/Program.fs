@@ -56,10 +56,13 @@ let main argv =
     
     let (dictionary, time) =
         time (fun () -> ScrabbleUtil.Dictionary.mkDict words dictAPI)
-    //let players    = [("LetterRip", dictionary,  LetterRip.Scrabble.startGame)]
-    let players = spawnMultiples "LetterRip" dictionary LetterRip.Scrabble.startGame 2
+    // let players    = [("LetterRip", dictionary,  LetterRip.Scrabble.startGame)]
+    // let players = spawnMultiples "LetterRip" dictionary LetterRip.Scrabble.startGame 2
 
-   // let players = spawnMultiples "OxyphenButazone" dictionary Oxyphenbutazone.Scrabble.startGame 2
+    // let players = spawnMultiples "OxyphenButazone" dictionary Oxyphenbutazone.Scrabble.startGame 2
+    let players = [("LetterRip", dictionary,  LetterRip.Scrabble.startGame)]
+    // let players    = [("LetterRip", dictionary,  LetterRip.Scrabble.startGame); ("OxyphenButazone", dictionary, Oxyphenbutazone.Scrabble.startGame)]
+    // let players = spawnMultiples "OxyphenButazone" dictionary Oxyphenbutazone.Scrabble.startGame 2
 
 
     do ScrabbleServer.Comm.startGame 
