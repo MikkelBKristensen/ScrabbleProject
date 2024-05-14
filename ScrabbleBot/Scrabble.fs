@@ -55,6 +55,7 @@ module State =
     type MoveCounter = {
         SwapCounter : uint32
         PassCounter : uint32
+        FailedMoveCounter : uint32
     }
     
     type state = {
@@ -97,19 +98,21 @@ module State =
     let updatePlayedLetters (PL : list<coord * (uint32 * (char * int))>)  (ms : (coord * (uint32 * (char * int))) list) : list<coord * (uint32 * (char * int))> =
         List.fold (fun acc x -> List.append acc [x]) PL ms
         
-    let createMoveCounter = {SwapCounter = 0u; PassCounter = 0u}
-    let resetMoveCounter mc = {SwapCounter = 0u; PassCounter = 0u}
+    let createMoveCounter = {SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; }
+    let resetMoveCounter mc = {SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; }
     let resetSwapCounter mc = {mc with SwapCounter = 0u}
     let resetPassCounter mc = {mc with PassCounter = 0u}
+    let resetFailedMoveCounter mc = {mc with FailedMoveCounter = 0u}
     let incrementSwapCounter mc = {mc with SwapCounter = mc.SwapCounter + 1u}
     let incrementPassCounter mc = {mc with PassCounter = mc.PassCounter + 1u}
+    let incrementFailedMoveCounter mc = {mc with FailedMoveCounter = mc.FailedMoveCounter + 1u}
         
     let findPiecesToSwap (hand : MultiSet.MultiSet<uint32>) : uint32 list =
+        
+        let wildCards = MultiSet.toList hand |> List.filter (fun x -> x = 0u)
         // Find duplicates in hand
         let duplicates = MultiSet.fold (fun acc x i -> if i > 1u then x :: acc else acc) [] hand
-        
         // if duplicates is less than or equal to 3, return the duplicates, else return first 3 elements of hand
-        // Create switch for different cases of duplicates length
         match duplicates.Length with
         | 0 -> MultiSet.toList hand |> List.take 3
         | 1 -> duplicates @ MultiSet.toList hand |> List.take 2
@@ -460,10 +463,12 @@ module Scrabble =
                 
                 
                 if List.isEmpty move then
-                    //Change tiles to use tilefinder logic
-                    send cstream (SMChange tilesToBeSwapped)
-                    //Missing logic to abort swap and pass instead
-                    //send cstream (SMPass)
+                    if st.moveCounter.PassCounter + st.moveCounter.SwapCounter + st.moveCounter.FailedMoveCounter < 2u then
+                        
+                        send cstream (SMChange tilesToBeSwapped)
+                    
+                    else
+                        send cstream (SMForfeit)
                 else
                     send cstream (SMPlay move)
 
@@ -502,7 +507,7 @@ module Scrabble =
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
-                let newMoveCounter = State.resetMoveCounter st.moveCounter
+                let newMoveCounter = State.incrementFailedMoveCounter st.moveCounter
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
                 aux st'
