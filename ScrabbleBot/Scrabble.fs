@@ -533,14 +533,17 @@ module Scrabble =
                 aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
-                let rec HandleErrors : uint32= 
+                
+                let rec HandleErrors (lst : GameplayError list) : uint32= 
                     match err with
                     | [] -> 3u
                     | x::xs ->
                         match x with
                         | GPENotEnoughPieces (x,y)->
                             y
-                let Tilesleft = HandleErrors
+                        | _ -> HandleErrors xs
+                            
+                let Tilesleft = HandleErrors err
                 let IncrementCounter = State.incrementSwapCounter st.moveCounter
                 let newMoveCounter = {IncrementCounter with TilesLeftFromError = Tilesleft}
                 
