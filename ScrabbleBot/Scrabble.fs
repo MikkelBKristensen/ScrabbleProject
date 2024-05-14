@@ -523,7 +523,11 @@ module Scrabble =
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter
                 aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            | RGPE err -> debugPrint "Gameplay Error:\n%A";  aux st
+            | RGPE err ->
+                match err with
+                | [] -> forcePrint $"Gameplay errors: None\n"
+                | gameplayErrors -> forcePrint $"Gameplay errors: %A{gameplayErrors}\n"
+                aux st
 
 
         aux st
