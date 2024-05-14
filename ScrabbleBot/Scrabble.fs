@@ -137,10 +137,12 @@ module State =
             if x >= (int amount) then
                 List.take (int amount) piecesToSwap
             else
-                if (int (MultiSet.size newnewhand)) >= (int amount) - (int x) then
-                    piecesToSwap @ MultiSet.toList newnewhand |> List.take ((int amount) - x)
-                else 
-                    piecesToSwap @ MultiSet.toList newnewhand 
+                
+                let piecesToSwap = piecesToSwap @ MultiSet.toList newnewhand
+                if ((List.length piecesToSwap) >= (int amount)) then
+                    List.take (int amount) piecesToSwap
+                else
+                    piecesToSwap
             
         
 
