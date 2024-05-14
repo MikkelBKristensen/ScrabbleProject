@@ -56,6 +56,7 @@ module State =
         SwapCounter : uint32
         PassCounter : uint32
         FailedMoveCounter : uint32
+        TilesLeftFromError: uint32
     }
     
     type state = {
@@ -98,8 +99,8 @@ module State =
     let updatePlayedLetters (PL : list<coord * (uint32 * (char * int))>)  (ms : (coord * (uint32 * (char * int))) list) : list<coord * (uint32 * (char * int))> =
         List.fold (fun acc x -> List.append acc [x]) PL ms
         
-    let createMoveCounter = {SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; }
-    let resetMoveCounter mc = {SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; }
+    let createMoveCounter = {SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; TilesLeftFromError = 3u }
+    let resetMoveCounter mc = {mc with SwapCounter = 0u; PassCounter = 0u; FailedMoveCounter = 0u; }
     let resetSwapCounter mc = {mc with SwapCounter = 0u}
     let resetPassCounter mc = {mc with PassCounter = 0u}
     let resetFailedMoveCounter mc = {mc with FailedMoveCounter = 0u}
@@ -488,8 +489,11 @@ module Scrabble =
                 
                 if List.isEmpty move then
                     if st.moveCounter.PassCounter + st.moveCounter.SwapCounter + st.moveCounter.FailedMoveCounter < 2u then
-                        
-                        send cstream (SMChange tilesToBeSwapped)
+                        if st.moveCounter.TilesLeftFromError = 0u then
+                            send cstream (SMForfeit)
+                        else
+                            //Call tilesToBeSwapped with st.moveCounter.TilesLeftFromError(Default value 3) 
+                            send cstream (SMChange tilesToBeSwapped)
                     
                     else
                         send cstream (SMForfeit)
@@ -553,10 +557,22 @@ module Scrabble =
                 aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
-                match err with
-                | [] -> forcePrint $"Gameplay errors: None\n"
-                | gameplayErrors -> forcePrint $"Gameplay errors: %A{gameplayErrors}\n"
-                aux st
+                
+                let rec HandleErrors (lst : GameplayError list) : uint32= 
+                    match err with
+                    | [] -> 3u
+                    | x::xs ->
+                        match x with
+                        | GPENotEnoughPieces (x,y)->
+                            y
+                        | _ -> HandleErrors xs
+                            
+                let Tilesleft = HandleErrors err
+                let IncrementCounter = State.incrementSwapCounter st.moveCounter
+                let newMoveCounter = {IncrementCounter with TilesLeftFromError = Tilesleft}
+                
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter
+                aux st'
 
 
         aux st
