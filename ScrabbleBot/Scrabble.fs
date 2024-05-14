@@ -497,6 +497,7 @@ module Scrabble =
                 aux st'
             | RCM (CMGameOver finalScore) ->
                 List.iter (fun (x, y) -> debugPrint $"{x}, {y}\n") finalScore
+                
             | RCM (CMChangeSuccess( newTiles) ) ->
                 let newHand = State.updateHandNoCoords st.hand tilesToBeSwapped newTiles
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
