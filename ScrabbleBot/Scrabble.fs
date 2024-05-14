@@ -277,7 +277,7 @@ module FindMove =
                         
     let FindWordFromHand (st : State.state) =         
         let cIdList = MultiSet.toList (st.hand)
-        assembleWord cIdList st.dict List.Empty |> assignCoords (0,0) (1,0) List.Empty
+        assembleWord cIdList st.dict List.Empty |> assignCoords st.board.center (1,0) List.Empty
         
     let assembleFromPrefix (cIdList: uint32 list) (dict: Dictionary.Dict) (word: list<(uint32 * (char * int))>) =
         let rec updateDict word (updatedDict : Dictionary.Dict) =
