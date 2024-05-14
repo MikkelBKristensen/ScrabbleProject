@@ -114,33 +114,33 @@ module State =
         // Get all wildCards on hand
         let wildCards = MultiSet.fold (fun acc x y -> if x = 0u then MultiSet.add x y acc else acc) MultiSet.empty hand
         // Remove wildcards from hand
-        let hand = MultiSet.remove 0u (MultiSet.size wildCards) hand
+        let newhand = MultiSet.remove 0u (MultiSet.size wildCards) hand
         // Add pieces to swap
         let piecesToSwap = piecesToSwap @ MultiSet.toList wildCards
 
         // Find duplicates in hand
-        let duplicates = MultiSet.fold (fun acc x y -> if y > 1u then (MultiSet.add x (y-1u) acc) else acc) MultiSet.empty hand
+        let duplicates = MultiSet.fold (fun acc x y -> if y > 1u then (MultiSet.add x (y-1u) acc) else acc) MultiSet.empty newhand
         // Remove duplicates from hand
-        let hand = MultiSet.fold (fun acc x y -> MultiSet.remove x y acc) hand hand
+        let newnewhand = MultiSet.fold (fun acc x y -> MultiSet.remove x y acc) newhand newhand
         // Add pieces to swap
         let piecesToSwap = piecesToSwap @ MultiSet.toList duplicates
 
         // If possible, take the first "amount" from piecesToSwap, else take "amount" from hand
         match List.length piecesToSwap with
         | 0 -> 
-            if ((MultiSet.size hand) >= amount) then
-                MultiSet.toList hand |> List.take (int amount)
+            if ((MultiSet.size newnewhand) >= amount) then
+                MultiSet.toList newnewhand |> List.take (int amount)
             else
-                MultiSet.toList hand
+                MultiSet.toList newnewhand
         | x -> 
             
             if x >= (int amount) then
                 List.take (int amount) piecesToSwap
             else
-                if (int (MultiSet.size hand)) >= (int amount) - (int x) then
-                    piecesToSwap @ MultiSet.toList hand |> List.take ((int amount) - x)
+                if (int (MultiSet.size newnewhand)) >= (int amount) - (int x) then
+                    piecesToSwap @ MultiSet.toList newnewhand |> List.take ((int amount) - x)
                 else 
-                    piecesToSwap @ MultiSet.toList hand 
+                    piecesToSwap @ MultiSet.toList newnewhand 
             
         
 
@@ -493,7 +493,7 @@ module Scrabble =
                             send cstream (SMForfeit)
                         else
                             //Call tilesToBeSwapped with st.moveCounter.TilesLeftFromError(Default value 3) 
-                            send cstream (SMChange tilesToBeSwapped)
+                            send cstream (SMChange (tilesToBeSwapped st.moveCounter.TilesLeftFromError))
                     
                     else
                         send cstream (SMForfeit)
@@ -543,7 +543,7 @@ module Scrabble =
                 List.iter (fun (x, y) -> debugPrint $"{x}, {y}\n") finalScore
                 
             | RCM (CMChangeSuccess( newTiles) ) ->
-                let newHand = State.updateHandNoCoords st.hand tilesToBeSwapped newTiles
+                let newHand = State.updateHandNoCoords st.hand (tilesToBeSwapped st.moveCounter.TilesLeftFromError) newTiles
                 let newMoveCounter = State.incrementSwapCounter st.moveCounter
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
