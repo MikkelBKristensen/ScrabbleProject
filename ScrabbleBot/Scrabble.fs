@@ -260,6 +260,7 @@ module FindMove =
                 match rest with
                 | [] -> [] // more cases
                 | _  when head > rest.Head -> []
+                | _ when rest.Length = 1 -> assembleWord rest dict word
                 | _ -> assembleWord (List.append rest [head]) dict word
             | Some x -> 
                 let newWord = List.append word [(head,(multisetUtil.cIdToChar head, multisetUtil.cIdToPV head))]
@@ -492,13 +493,13 @@ module Scrabble =
                 if List.isEmpty move then
                     if st.moveCounter.PassCounter + st.moveCounter.SwapCounter + st.moveCounter.FailedMoveCounter < 2u then
                         if st.moveCounter.TilesLeftFromError = 0u then
-                            send cstream (SMForfeit)
+                            send cstream (SMPass)
                         else
                             //Call tilesToBeSwapped with st.moveCounter.TilesLeftFromError(Default value 3) 
                             send cstream (SMChange (tilesToBeSwapped st.moveCounter.TilesLeftFromError))
                     
                     else
-                        send cstream (SMForfeit)
+                        send cstream (SMPass)
                 else
                     send cstream (SMPlay move)
 
@@ -541,7 +542,8 @@ module Scrabble =
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
                 aux st'
-            | RCM (CMGameOver _) -> ()
+            | RCM (CMGameOver _) ->
+                ()
                 
             | RCM (CMChangeSuccess( newTiles) ) ->
                 let newHand = State.updateHandNoCoords st.hand (tilesToBeSwapped st.moveCounter.TilesLeftFromError) newTiles
@@ -559,10 +561,7 @@ module Scrabble =
             |RCM (CMForfeit pid) ->
                 let newForfeitedPlayers = Set.add pid st.forfeitedPlayers
                 let updatePlayerAmount = st.playerAmount - 1u
-                
-                (*if (updatePlayerAmount = 0u) then
-                    ()
-                else*)
+
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand updatePlayerAmount newTurn newForfeitedPlayers st.playedTiles st.wordList st.moveCounter
                 aux st'
             | RCM (CMChange _) ->
