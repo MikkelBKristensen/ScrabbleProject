@@ -74,7 +74,8 @@ module State =
     let mkState b d pn h pa pt fp pl wl mc =
         {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt
          forfeitedPlayers = fp; playedTiles = pl; wordList = wl; moveCounter = mc; }
-    let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount) + 1u
+    
+    let updateTurn (pid:uint32) (pAmount:uint32)  = (pid % pAmount) + 1u
 
     // Removes the used pieces from the hand
     let removeUsedPieces (hand : MultiSet.MultiSet<uint32>) (ms : (coord * (uint32 * (char * int))) list) =
@@ -121,7 +122,7 @@ module State =
         // Find duplicates in hand
         let duplicates = MultiSet.fold (fun acc x y -> if y > 1u then (MultiSet.add x (y-1u) acc) else acc) MultiSet.empty newhand
         // Remove duplicates from hand
-        let newnewhand = MultiSet.fold (fun acc x y -> MultiSet.remove x y acc) newhand newhand
+        let newnewhand = MultiSet.fold (fun acc x y -> MultiSet.remove x y acc) newhand duplicates
         // Add pieces to swap
         let piecesToSwap = piecesToSwap @ MultiSet.toList duplicates
 
@@ -478,16 +479,15 @@ module Scrabble =
             Print.printHand pieces (State.hand st)
 
             // remove the force print when you move on from manual input (or when you have learnt the format)
-            debugPrint $"Playerturn {State.playersTurn st}\n"
-            debugPrint $"Playernumber {State.playerNumber st}\n"
+            //forcePrint $"Playerturn {State.playersTurn st}\n"
+            //forcePrint $"Playernumber {State.playerNumber st}\n"
             
             let tilesToBeSwapped = State.findPiecesToSwap st.hand
 
-            if State.playerNumber st = State.playersTurn st then
-                debugPrint "Your turn!\n"
+            if State.playerNumber st = State.playersTurn st && Set.contains st.playerNumber st.forfeitedPlayers |> not then
+                //forcePrint "Your turn!\n"
                 let word = FindMove.decisionStarter st // If empty word is returned, pass or swap
                 let move = word //RegEx.parseMove input
-                
                 
                 if List.isEmpty move then
                     if st.moveCounter.PassCounter + st.moveCounter.SwapCounter + st.moveCounter.FailedMoveCounter < 2u then
@@ -541,8 +541,7 @@ module Scrabble =
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
                 aux st'
-            | RCM (CMGameOver finalScore) ->
-                List.iter (fun (x, y) -> debugPrint $"{x}, {y}\n") finalScore
+            | RCM (CMGameOver _) -> ()
                 
             | RCM (CMChangeSuccess( newTiles) ) ->
                 let newHand = State.updateHandNoCoords st.hand (tilesToBeSwapped st.moveCounter.TilesLeftFromError) newTiles
@@ -560,12 +559,15 @@ module Scrabble =
             |RCM (CMForfeit pid) ->
                 let newForfeitedPlayers = Set.add pid st.forfeitedPlayers
                 let updatePlayerAmount = st.playerAmount - 1u
-                    
+                
+                (*if (updatePlayerAmount = 0u) then
+                    ()
+                else*)
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand updatePlayerAmount newTurn newForfeitedPlayers st.playedTiles st.wordList st.moveCounter
                 aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
-                
+                let var = err
                 let rec HandleErrors (lst : GameplayError list) : uint32= 
                     match err with
                     | [] -> 3u
