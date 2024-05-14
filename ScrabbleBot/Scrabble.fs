@@ -482,8 +482,9 @@ module Scrabble =
                 let newHand = State.updateHand st.hand ms newPieces
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
                 let wordsPlayed = FindMove.findAllWords newPlayedLetters
+                let newMoveCounter = State.resetMoveCounter st.moveCounter
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed State // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed newMoveCounter // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
