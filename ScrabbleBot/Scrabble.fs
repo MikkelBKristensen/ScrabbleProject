@@ -555,6 +555,12 @@ module Scrabble =
                 
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter
                 aux st'
+            |RCM (CMForfeit pid) ->
+                let newForfeitedPlayers = Set.add pid st.forfeitedPlayers
+                let updatePlayerAmount = st.playerAmount - 1u
+                    
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand updatePlayerAmount newTurn newForfeitedPlayers st.playedTiles st.wordList st.moveCounter
+                aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
                 
@@ -565,7 +571,9 @@ module Scrabble =
                         match x with
                         | GPENotEnoughPieces (x,y)->
                             y
-                        | _ -> HandleErrors xs
+                        | _ ->
+                            forcePrint $"Error: %A{x}"
+                            HandleErrors xs
                             
                 let Tilesleft = HandleErrors err
                 let IncrementCounter = State.incrementSwapCounter st.moveCounter
