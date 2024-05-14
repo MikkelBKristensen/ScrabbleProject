@@ -565,6 +565,9 @@ module Scrabble =
                 else*)
                 let st' = State.mkState st.board  st.dict st.playerNumber st.hand updatePlayerAmount newTurn newForfeitedPlayers st.playedTiles st.wordList st.moveCounter
                 aux st'
+            | RCM (CMChange _) ->
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList st.moveCounter
+                aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
                 let var = err
