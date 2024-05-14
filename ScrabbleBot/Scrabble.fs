@@ -52,11 +52,9 @@ module State =
         Direction: coord
     }
     
-    type Move = {
-        Coord       : coord
-        TileId      : uint32
-        Tile        : char
-        PointValue  : int
+    type MoveCounter = {
+        SwapCounter : uint32
+        PassCounter : uint32
     }
     
     type state = {
@@ -69,10 +67,11 @@ module State =
         forfeitedPlayers : Set<uint32>
         playedTiles      : list<coord * (uint32 * (char * int))>
         wordList         : list<WordInfo>
+        moveCounter      : MoveCounter
     }
-    let mkState b d pn h pa pt fp pl wl =
+    let mkState b d pn h pa pt fp pl wl mc =
         {board = b; dict = d;  playerNumber = pn; hand = h; playerAmount = pa; playersTurn = pt
-         forfeitedPlayers = fp; playedTiles = pl; wordList = wl; }
+         forfeitedPlayers = fp; playedTiles = pl; wordList = wl; moveCounter = mc; }
     let updateTurn (pid:uint32) (pAmount:uint32)  = ((pid + 1u) % pAmount) + 1u
 
     // Removes the used pieces from the hand
@@ -97,6 +96,13 @@ module State =
         
     let updatePlayedLetters (PL : list<coord * (uint32 * (char * int))>)  (ms : (coord * (uint32 * (char * int))) list) : list<coord * (uint32 * (char * int))> =
         List.fold (fun acc x -> List.append acc [x]) PL ms
+        
+    let createMoveCounter = {SwapCounter = 0u; PassCounter = 0u}
+    let resetMoveCounter mc = {SwapCounter = 0u; PassCounter = 0u}
+    let resetSwapCounter mc = {mc with SwapCounter = 0u}
+    let resetPassCounter mc = {mc with PassCounter = 0u}
+    let incrementSwapCounter mc = {mc with SwapCounter = mc.SwapCounter + 1u}
+    let incrementPassCounter mc = {mc with PassCounter = mc.PassCounter + 1u}
         
     let findPiecesToSwap (hand : MultiSet.MultiSet<uint32>) : uint32 list =
         // Find duplicates in hand
@@ -477,7 +483,7 @@ module Scrabble =
                 let newPlayedLetters = State.updatePlayedLetters st.playedTiles ms
                 let wordsPlayed = FindMove.findAllWords newPlayedLetters
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed State // This state needs to be updated
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
@@ -488,25 +494,33 @@ module Scrabble =
                 // Make wordsPlyed -> list<WordInfo>
                 let wordsPlayed = FindMove.findAllWords newPlayedLetters
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed // This state needs to be updated
+                // reset moveCounter
+                let newMoveCounter = State.resetMoveCounter st.moveCounter
+                
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers newPlayedLetters wordsPlayed newMoveCounter// This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
+                let newMoveCounter = State.resetMoveCounter st.moveCounter
                 
-                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
                 aux st'
             | RCM (CMGameOver finalScore) ->
                 List.iter (fun (x, y) -> debugPrint $"{x}, {y}\n") finalScore
                 
             | RCM (CMChangeSuccess( newTiles) ) ->
                 let newHand = State.updateHandNoCoords st.hand tilesToBeSwapped newTiles
-                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList // This state needs to be updated
+                let newMoveCounter = State.incrementSwapCounter st.moveCounter
+                
+                let st' = State.mkState st.board  st.dict st.playerNumber newHand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter// This state needs to be updated
                 aux st'
-            
                 
             | RCM (CMPassed _) ->
                 let st = st
-                aux st
+                let newMoveCounter = State.incrementPassCounter st.moveCounter
+                
+                let st' = State.mkState st.board  st.dict st.playerNumber st.hand st.playerAmount newTurn st.forfeitedPlayers st.playedTiles st.wordList newMoveCounter
+                aux st'
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err -> debugPrint "Gameplay Error:\n%A";  aux st
 
@@ -537,5 +551,5 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet numPlayers playerTurn Set.empty<uint32> list.Empty list.Empty )
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet numPlayers playerTurn Set.empty<uint32> list.Empty list.Empty State.createMoveCounter )
         
